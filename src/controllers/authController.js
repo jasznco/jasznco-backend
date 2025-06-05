@@ -78,6 +78,7 @@ module.exports = {
       res.status(500).json({ message: 'Server error' });
     }
   },
+  
   getUser: async (userId) => {
     const user = await User.findById(userId).select('-password');
     if (!user) {
@@ -86,38 +87,45 @@ module.exports = {
     return user;
   },
 
-  sendOTP: async (req, res) => {
-    try {
-      const email = req.body.email;
+sendOTP: async (req, res) => {
+  try {
+    const { email, firstName, lastName } = req.body;
 
-      const user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-      console.log('ssssss', user)
-      if (!user) {
-        return response.badReq(res, { message: "Email does exist." });
-      }
-      // OTP is fixed for Now: 0000
-      let ran_otp = '0000';
-      // let ran_otp = Math.floor(1000 + Math.random() * 9000);
-      // await mailNotification.sendOTPmail({
-      //   code: ran_otp,
-      //   email: email
-      // });
-      let ver = new Verification({
-        //email: email,
-        user: user._id,
-        otp: ran_otp,
-        expiration_at: userHelper.getDatewithAddedMinutes(5),
-      });
-      await ver.save();
-      let token = await userHelper.encode(ver._id);
-
-      return response.ok(res, { message: "OTP sent.", token });
-
-    } catch (error) {
-      return response.error(res, error);
+    if (!user) {
+      return response.badReq(res, { message: "Email does not exist." });
     }
-  },
+
+    // Combine first and last name from request
+    const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
+    const fullNameFromDB = user.name?.trim().toLowerCase();
+
+    if (fullNameFromRequest !== fullNameFromDB) {
+      return response.badReq(res, { message: "Name and email do not match our records." });
+    }
+
+    // OTP logic
+    const ran_otp = '0000'; // temporary static OTP
+
+    const ver = new Verification({
+      email: email,
+      user: user._id,
+      otp: ran_otp,
+      expiration_at: userHelper.getDatewithAddedMinutes(5),
+    });
+
+    await ver.save();
+
+    const token = await userHelper.encode(ver._id);
+
+    return response.ok(res, { message: "OTP sent.", token });
+
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
+
 
   verifyOTP: async (req, res) => {
     try {
