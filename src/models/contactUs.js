@@ -1,32 +1,27 @@
+// models/Contact.js
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
-            match: [
-                /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/,
-                'Please enter a valid email address',
-            ],
-        },
-        description: {
-            type: String,
-            required: true,
-            trim: true,
-        }
+const contactSchema = new mongoose.Schema({
+    name:{
+        type: String,
+        required: true
     },
-    { timestamps: true },
-);
+    Email:{
+        type: String,
+        required: true,
+        match: [/.+@.+\..+/, 'Please fill a valid email address']
 
-const contactUs = mongoose.model('contactUs', userSchema);
-module.exports = contactUs;
+    },
+    subject: {
+        type: String,
+        required: false
+    },
+    message: {
+        type: String,
+        required: true
+    },
+}, { timestamps: true });
 
+const Contact = mongoose.model('Contactus', contactSchema);
+
+module.exports = Contact;

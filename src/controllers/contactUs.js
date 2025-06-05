@@ -1,20 +1,14 @@
-const contactUs = require('@models/contactUs');
+const Contact = require('@models/contactUs');
 const response = require("../../responses");
 
 module.exports = {
     contactUs: async (req, res) => {
         try {
-            const { name, email, description } = req.body;
-
-            if (!name || !email || !description) {
-                return res.status(400).json({ message: 'Name and email and description are required' });
-            }
-
-            const payload = req?.body || {};
-            let cont = new contactUs(payload);
-            await cont.save();
-
-            return response.ok(res, { message: 'Your message has been sent successfully!' });
+            const { name, Email, subject, message } = req.body;
+            // Create a new contact entry
+            const newContact = new Contact({ name, Email, subject, message });
+            await newContact.save();
+            return response.ok(res, { message: 'Contact submitted successfully' });
         } catch (error) {
             return response.error(res, error);
         }
@@ -22,7 +16,7 @@ module.exports = {
 
     getContactUs: async (req, res) => {
         try {
-            const contact = await contactUs.find();
+            const contact = await Contact.find();
             return response.ok(res, contact)
         } catch (error) {
             return response.error(res, error)

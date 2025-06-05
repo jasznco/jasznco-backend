@@ -10,13 +10,14 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 module.exports = {
   register: async (req, res) => {
+    console.log("REQ BODY:", req.body);
     try {
       const { name, email, password, phone } = req.body;
 
       if (password.length < 6) {
         return res
           .status(400)
-          .json({ message: 'Password must be at least 8 characters long' });
+          .json({ message: 'Password must be at least 6 characters long' });
       }
 
       const existingUser = await User.findOne({ email });
@@ -50,24 +51,28 @@ module.exports = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+        return res.status(400).json({ status: false, message: 'Email and password are required' });
       }
 
       const user = await User.findOne({ email });
       if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ status: false, message: 'Invalid credentials' });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ status: false, message: 'Invalid credentials' });
       }
 
-      const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
+        expiresIn: '1h',
+      });
 
-      res.json({
-        token,
-        user: {
+      return res.json({
+        status: true,
+        data: {
+          token,
+          role: user.role, // ✅ Ensure user.type exists in your DB
           id: user._id,
           email: user.email,
           name: user.name,
@@ -75,56 +80,76 @@ module.exports = {
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ status: false, message: 'Server error' });
     }
   },
-  
-  getUser: async (userId) => {
-    const user = await User.findById(userId).select('-password');
-    if (!user) {
-      throw new Error('User not found');
+
+
+  getUser: async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ status: false, message: "User ID is required" });
+      }
+
+      const user = await User.findById(userId).select("-password");
+
+      if (!user) {
+        return res.status(404).json({ status: false, message: "User not found" });
+      }
+
+      res.status(200).json({
+        status: true,
+        message: "User profile fetched successfully",
+        data: user,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: false,
+        message: error.message || "Internal Server Error",
+      });
     }
-    return user;
   },
 
-sendOTP: async (req, res) => {
-  try {
-    const { email, firstName, lastName } = req.body;
+  sendOTP: async (req, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
 
-    const user = await User.findOne({ email });
+      const user = await User.findOne({ email });
 
-    if (!user) {
-      return response.badReq(res, { message: "Email does not exist." });
+      if (!user) {
+        return response.badReq(res, { message: "Email does not exist." });
+      }
+
+      // Combine first and last name from request
+      const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
+      const fullNameFromDB = user.name?.trim().toLowerCase();
+
+      if (fullNameFromRequest !== fullNameFromDB) {
+        return response.badReq(res, { message: "Name and email do not match our records." });
+      }
+
+      // OTP logic
+      const ran_otp = '0000'; // temporary static OTP
+
+      const ver = new Verification({
+        email: email,
+        user: user._id,
+        otp: ran_otp,
+        expiration_at: userHelper.getDatewithAddedMinutes(5),
+      });
+
+      await ver.save();
+
+      const token = await userHelper.encode(ver._id);
+
+      return response.ok(res, { message: "OTP sent.", token });
+
+    } catch (error) {
+      return response.error(res, error);
     }
-
-    // Combine first and last name from request
-    const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
-    const fullNameFromDB = user.name?.trim().toLowerCase();
-
-    if (fullNameFromRequest !== fullNameFromDB) {
-      return response.badReq(res, { message: "Name and email do not match our records." });
-    }
-
-    // OTP logic
-    const ran_otp = '0000'; // temporary static OTP
-
-    const ver = new Verification({
-      email: email,
-      user: user._id,
-      otp: ran_otp,
-      expiration_at: userHelper.getDatewithAddedMinutes(5),
-    });
-
-    await ver.save();
-
-    const token = await userHelper.encode(ver._id);
-
-    return response.ok(res, { message: "OTP sent.", token });
-
-  } catch (error) {
-    return response.error(res, error);
-  }
-},
+  },
 
 
   verifyOTP: async (req, res) => {
@@ -181,5 +206,37 @@ sendOTP: async (req, res) => {
       return response.error(res, error);
     }
   },
-  
+
+  updateProfile: async (req, res) => {
+  try {
+    const { userId, ...updateData } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ status: false, message: 'User ID is required' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ status: false, message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: 'Profile updated successfully',
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return res.status(500).json({
+      status: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+},
+
 };
