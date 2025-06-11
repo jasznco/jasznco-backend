@@ -1,4 +1,4 @@
-const Contact = require('@models/Category');
+const Contact = require('@models/contactUs');
 const response = require("../../responses");
 
 module.exports = {

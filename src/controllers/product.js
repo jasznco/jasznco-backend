@@ -1,0 +1,405 @@
+const mongoose = require("mongoose");
+const Product = require("@models/product");
+// const ProductRequest = mongoose.model("ProductRequest")
+const User = mongoose.model("User");
+// const { parseStringPromise } = require('xml2js');
+
+const response = require("./../../responses");
+// const mailNotification = require("../services/mailNotification");
+
+
+
+module.exports = {
+
+  createProduct: async (req, res) => {
+  try {
+    const payload = req?.body || {};
+
+    const existingProduct = await Product.findOne({
+      name: payload.name,
+      categoryName: payload.categoryName,
+      subCategoryName: payload.subCategoryName,
+    });
+
+    if (existingProduct) {
+      return res.status(400).json({
+        status: false,
+        message: "Product with the same name in this category/subcategory already exists",
+      });
+    }
+
+    // If no duplicate, create new product
+    const newProduct = new Product(payload);
+    await newProduct.save();
+
+    return response.ok(res, { message: "Product added successfully" });
+
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
+
+
+    getProductFromLocalApi: async (req, res) => {
+        try {
+            const headers = {
+                'Accept': 'application/xml',
+            }
+            if(req.body.token){
+                headers.Authorization=req.body.token
+            }
+            const response = await fetch(req.body.url, {
+              method: "get",
+              mode: "cors",
+              headers: {
+                "Accept-language": "pl\r\n",
+                'Accept': 'application/xml',
+                "Authorization": "Token 38f6d786d20352799f07c00310fc94679d5479ea\r\n",
+              },
+            });
+        
+            if (!response.ok) {
+              // Handle non-200 responses
+              return res.status(response.status).json({ error: `Error fetching data: ${response.statusText}` });
+            }
+        
+            const xmlData = await response.text();
+            const jsonData = await parseStringPromise(xmlData);
+        
+            // Send the parsed JSON data
+            return res.status(200).json({
+              success: true,
+              data: jsonData,
+            });
+          } catch (error) {
+            // Catch and handle any errors
+            console.error('Error:', error);
+            return res.status(500).json({
+              success: false,
+              error: 'Internal Server Error',
+            });
+          }
+    },
+
+    createManyProduct: async (req, res) => {
+        try {
+            const payload = req?.body || {};
+            let cat = await Product.insertMany(payload)
+            // await cat.save();
+            return response.ok(res, { message: 'Product added successfully' });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getProduct: async (req, res) => {
+        try {
+            let product = await Product.find().populate('category').sort({ 'createdAt': -1 });
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getProductById: async (req, res) => {
+        try {
+            let product = await Product.findById(req?.params?.id).populate('category');
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getProductBycategoryId: async (req, res) => {
+        console.log(req.query)
+        try {
+            let cond = {
+            }
+            if (req?.query?.category) {
+                cond.category = { $in: [req?.query?.category] }
+            }
+            if (req?.query?.product) {
+                cond._id = { $ne: req?.query?.product }
+            }
+            let sort_by = {}
+            if (req.query.is_top) {
+                cond.is_top = true
+            }
+            if (req.query.is_new) {
+                cond.is_new = true
+            }
+
+            if (req.query.colors && req.query.colors.length > 0) {
+                cond.varients = { $ne: [], $elemMatch: { color: { $in: req.query.colors } } }
+            }
+
+            if (req.query.brand) {
+                cond.brand = req.query.brand
+            }
+
+            if (req.query.gender) {
+                 let c = {}
+                if(req.query.gender === 'Male'){
+                    cond.$or=[{gender : req.query.gender},{gender : "Men's"}]
+                }
+                if(req.query.gender === 'Female'){
+                    cond.$or=[{gender : req.query.gender},{gender : "Ladies"},{gender : "Ladies'"}]
+                }
+                if(req.query.gender === 'Unisex'){
+                    cond.$or=[{gender : req.query.gender},{gender : ""}]
+                }
+                // cond.gender = req.query.gender
+            }
+
+            if (req.query.sort_by) {
+                if (req.query.sort_by === 'featured' || req.query.sort_by === 'new') {
+                    sort_by.createdAt = -1
+                }
+
+                if (req.query.sort_by === 'old') {
+                    sort_by.createdAt = 1
+                }
+
+                if (req.query.sort_by === 'a_z') {
+                    sort_by.name = 1
+                }
+
+                if (req.query.sort_by === 'z_a') {
+                    sort_by.name = -1
+                }
+
+                if (req.query.sort_by === 'low') {
+                    sort_by.price = 1
+                }
+
+                if (req.query.sort_by === 'high') {
+                    sort_by.price = -1
+                }
+            } else {
+                sort_by.createdAt = -1
+            }
+            let skip = (req.query.page - 1) * req.query.limit
+            let product = await Product.find(cond).populate('category brand').sort(sort_by).skip(skip).limit(req.query.limit);
+            let d = await Product.countDocuments(cond)
+            console.log(d)
+            return response.ok(res, { product, length: d });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getProductBythemeId: async (req, res) => {
+        console.log(req.query)
+        try {
+            let cond = {
+                theme: { $in: [req?.params?.id] }
+            }
+            let sort_by = {}
+            if (req.query.is_top) {
+                cond.is_top = true
+            }
+            if (req.query.is_new) {
+                cond.is_new = true
+            }
+
+            if (req.query.brand) {
+                cond.brand = req.query.brand
+            }
+
+            if (req.query.gender) {
+                cond.gender = req.query.gender
+            }
+
+            if (req.query.colors && req.query.colors.length > 0) {
+                cond.varients = { $ne: [], $elemMatch: { color: { $in: req.query.colors } } }
+            }
+
+            if (req.query.sort_by) {
+                if (req.query.sort_by === 'featured' || req.query.sort_by === 'new') {
+                    sort_by.createdAt = -1
+                }
+
+                if (req.query.sort_by === 'old') {
+                    sort_by.createdAt = 1
+                }
+
+                if (req.query.sort_by === 'a_z') {
+                    sort_by.name = 1
+                }
+
+                if (req.query.sort_by === 'z_a') {
+                    sort_by.name = -1
+                }
+
+                if (req.query.sort_by === 'low') {
+                    sort_by.price = 1
+                }
+
+                if (req.query.sort_by === 'high') {
+                    sort_by.price = -1
+                }
+            } else {
+                sort_by.createdAt = -1
+            }
+            let product
+            let d
+            // const product = await Product.find(cond).populate('theme brand').sort(sort_by);
+            if (req.query.page) {
+                let skip = (req.query.page - 1) * req.query.limit
+                product = await Product.find(cond).populate('theme brand').sort(sort_by).skip(skip).limit(req.query.limit);
+                d = await Product.countDocuments(cond)
+            } else {
+                product = await Product.find(cond).populate('theme brand').sort(sort_by).limit(8);
+            }
+
+            return response.ok(res, { product, length: d });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+    getColors: async (req, res) => {
+        try {
+            let product = await Product.aggregate([
+
+                { $unwind: "$varients" },
+                {
+                    $group: {
+                        _id: null, // We don't need to group by a specific field, so use null
+                        uniqueColors: { $addToSet: "$varients.color" } // $addToSet ensures uniqueness
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0, // Exclude _id from the output
+                        uniqueColors: 1
+                    }
+                }
+            ])
+
+            return response.ok(res, product[0]);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    updateProduct: async (req, res) => {
+        try {
+            const payload = req?.body || {};
+            let product = await Product.findByIdAndUpdate(payload?.id, payload, {
+                new: true,
+                upsert: true,
+            });
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    productSearch: async (req, res) => {
+        try {
+            let cond = {
+                '$or': [
+                    { name: { $regex: req.query.key, $options: "i" } },
+                    // { categoryName: { $in: [{ $regex: req.query.key, $options: "i" }] } },
+                    // { themeName: { $in: [{ $regex: req.query.key, $options: "i" }] } },
+                    { brandName: { $regex: req.query.key, $options: "i" } },
+                    // { details: { $regex: q.location, $options: "i" } },
+                ]
+            };
+            const product = await Product.find(cond).sort({ 'createdAt': -1 });
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+
+    topselling: async (req, res) => {
+        try {
+            let product = await Product.find({ is_top: true }).sort({'updatedAt':-1});
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getnewitem: async (req, res) => {
+        try {
+            let product = await Product.find({ is_new: true }).sort({'updatedAt':-1});
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    deleteProduct: async (req, res) => {
+        try {
+            await Product.findByIdAndDelete(req?.params?.id);
+            return response.ok(res, { meaasge: "Deleted successfully" });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    deleteAllProduct: async (req, res) => {
+        try {
+            const newid = req.body.products.map(f => new mongoose.Types.ObjectId(f))
+            await Product.deleteMany({ _id: { $in: newid } });
+            return response.ok(res, { meaasge: "Deleted successfully" });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    requestProduct: async (req, res) => {
+        try {
+            const payload = req?.body || {};
+            // payload.user = req.user.id
+            let cat = await ProductRequest.insertMany(payload);
+            // await cat.save();
+            let user = await User.findById(req.user.id)
+            await mailNotification.bookMailtoUser({ user })
+            await mailNotification.bookMailtoAdmin({ user })
+            // await Product.findByIdAndUpdate(payload?.productDetail._id, payload.productDetail);
+
+            return response.ok(res, { message: 'Product request added successfully' });
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+    getrequestProduct: async (req, res) => {
+        try {
+            const product = await ProductRequest.find().populate('product user category', '-password -varients').sort({ createdAt: -1 })
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    updaterequestProduct: async (req, res) => {
+        try {
+            const product = await ProductRequest.findByIdAndUpdate(req.params.id, req.body, { upsert: true, new: true })
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getrequestProductbyid: async (req, res) => {
+        try {
+            const product = await ProductRequest.findById(req.params.id).populate('user', '-password').populate('category product')
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+
+    getrequestProductbyuser: async (req, res) => {
+        try {
+            const product = await ProductRequest.find({ user: req.user.id }).populate('category product').sort({ 'createdAt': -1 })
+            return response.ok(res, product);
+        } catch (error) {
+            return response.error(res, error);
+        }
+    },
+};
