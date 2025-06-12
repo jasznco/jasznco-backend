@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const Product = require("@models/product");
-// const ProductRequest = mongoose.model("ProductRequest")
+const ProductRequest = require("@models/product-request");
 const User = mongoose.model("User");
 // const { parseStringPromise } = require('xml2js');
+const { DateTime } = require('luxon'); // still can be kept if needed elsewhere
 
 const response = require("./../../responses");
 // const mailNotification = require("../services/mailNotification");
@@ -351,22 +352,87 @@ module.exports = {
         }
     },
 
-    requestProduct: async (req, res) => {
-        try {
-            const payload = req?.body || {};
-            // payload.user = req.user.id
-            let cat = await ProductRequest.insertMany(payload);
-            // await cat.save();
-            let user = await User.findById(req.user.id)
-            await mailNotification.bookMailtoUser({ user })
-            await mailNotification.bookMailtoAdmin({ user })
-            // await Product.findByIdAndUpdate(payload?.productDetail._id, payload.productDetail);
 
-            return response.ok(res, { message: 'Product request added successfully' });
-        } catch (error) {
-            return response.error(res, error);
+requestProduct: async (req, res) => {
+    try {
+        const payload = req?.body || {};
+        const storePrefix = "JASZ"; 
+
+        const lastOrder = await ProductRequest.findOne().sort({ createdAt: -1 }).lean();
+
+        let orderNumber = 1;
+
+        const centralTime = DateTime.now().setZone("America/Chicago");
+const datePart = centralTime.toFormat("yyLLdd"); // e.g., 240612
+
+        if (lastOrder && lastOrder.orderId) {
+            const match = lastOrder.orderId.match(/-(\d{2})$/);
+            if (match && match[1]) {
+                orderNumber = parseInt(match[1], 10) + 1;
+            }
         }
-    },
+
+        const orderPart = String(orderNumber).padStart(2, '0');
+        const generatedOrderId = `${storePrefix}-${datePart}-${orderPart}`;
+
+        payload.orderId = generatedOrderId;
+
+        const newOrder = new ProductRequest(payload);
+        newOrder.orderId = generatedOrderId;
+
+        await newOrder.save();
+
+        await Promise.all(
+            payload.productDetail.map(async (productItem) => {
+                const product = await Product.findById(productItem.product);
+                if (!product) return;
+
+                const colorToMatch = productItem.color;
+                const selectedSize = productItem.selected?.[0]?.value; 
+                const quantityToReduce = Number(productItem.total || 0);
+
+                if (!colorToMatch || !selectedSize || !quantityToReduce) return;
+
+                const updatedVariants = product.variants.map(variant => {
+                    if (variant.color !== colorToMatch) return variant;
+
+                    const updatedSelected = variant.selected.map(sel => {
+                        if (sel.value === selectedSize) {
+                            return {
+                                ...sel,
+                                total: Math.max(Number(sel.total) - quantityToReduce, 0).toString()
+                            };
+                        }
+                        return sel;
+                    });
+
+                    return {
+                        ...variant,
+                        selected: updatedSelected
+                    };
+                });
+
+                await Product.findByIdAndUpdate(product._id, {
+                    variants: updatedVariants,
+                    $inc: {
+                        sold_pieces: quantityToReduce,
+                        Quantity: -quantityToReduce
+                    }
+                }, { new: true });
+            })
+        );
+
+        return response.ok(res, {
+            message: 'Product request added successfully',
+            orders: newOrder
+        });
+
+    } catch (error) {
+        return response.error(res, error);
+    }
+},
+
+
     getrequestProduct: async (req, res) => {
         try {
             const product = await ProductRequest.find().populate('product user category', '-password -varients').sort({ createdAt: -1 })

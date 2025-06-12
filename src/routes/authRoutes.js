@@ -34,6 +34,9 @@ router.delete("/deleteProduct/:id", product.deleteProduct);
 router.get("/getProductById/:id", product.getProductById);
 router.get("/getProductBycategoryId", product.getProductBycategoryId);
 router.get("/getProductBythemeId/:id", product.getProductBythemeId);
+router.post("/createProductRequest", product.requestProduct);
+router.get("/getrequestProduct",product.getrequestProduct)
+
 
 router.post("/createBlog",Blog.createBlog)
 router.get("/getAllBlogs",Blog.getAllBlogs)
