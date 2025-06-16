@@ -157,7 +157,6 @@ module.exports = {
         if (req.query.gender === "Unisex") {
           cond.$or = [{ gender: req.query.gender }, { gender: "" }];
         }
-        // cond.gender = req.query.gender
       }
 
       if (req.query.sort_by) {

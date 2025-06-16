@@ -72,15 +72,16 @@ module.exports = {
         cond.user = req.params.id;
       }
 
-      const page = parseInt(req.query.page) || 1; // Default to page 1
-      const limit = parseInt(req.query.limit) || 10; // Default to limit of 10
-      const skip = (page - 1) * limit; // Calculate how many to skip
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
 
       const allreview = await Review.find(cond)
-        .skip(skip) // Skip documents for pagination
-        .limit(limit); // Limit the number of documents returned
+        .populate("product posted_by")
+        .skip(skip)
+        .limit(limit);
 
-      const totalReviews = await Review.countDocuments(cond); // Total reviews count
+      const totalReviews = await Review.countDocuments(cond);
 
       res.status(200).json({
         success: true,
