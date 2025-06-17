@@ -15,6 +15,10 @@ const Blog = require("@controllers/blogController");
 const Category = require("@controllers/Catgeory");
 const product = require("@controllers/product");
 const upload = require("@services/upload");
+const favourite = require("@controllers/Favorite")
+
+
+
 
 const router = express.Router();
 router.post("/auth/login", login);
@@ -46,11 +50,18 @@ router.post("/createProductRequest", product.requestProduct);
 router.get("/getrequestProduct", authenticate, product.getrequestProduct);
 router.get("/getHistoryProduct", authenticate, product.getHistoryProduct);
 
+router.get("/getColors", product.getColors);
+router.get("/getBrand", product.getBrand);
+
 router.get(
   "/getProductRequest/:id",
   authenticate,
   product.getrequestProductbyid
 );
+
+router.post("/addremovefavourite", authenticate, favourite.AddFavourite);
+
+router.get("/getFavourite", authenticate, favourite.getFavourite);
 
 router.post("/giverate", authenticate, user.giverate);
 router.post("/getReview", authenticate, user.getReview);

@@ -2,11 +2,19 @@ const mongoose = require("mongoose");
 const Product = require("@models/product");
 const ProductRequest = require("@models/product-request");
 const User = mongoose.model("User");
-// const { parseStringPromise } = require('xml2js');
 const { DateTime } = require("luxon"); // still can be kept if needed elsewhere
 const Category = mongoose.model("Category");
 const response = require("./../../responses");
-// const mailNotification = require("../services/mailNotification");
+const Favourite = require("@models/Favorite");
+const _ = require("underscore");
+
+const cleanAndUnique = (data) => {
+  return _.uniq(
+    data
+      .map((item) => item.trim()) // Trim spaces and convert to lowercase
+      .filter((item) => item !== "") // Remove empty or space-only values
+  );
+};
 
 module.exports = {
   createProduct: async (req, res) => {
@@ -102,100 +110,101 @@ module.exports = {
     }
   },
 
-  getProductById: async (req, res) => {
-    try {
-      let product = await Product.findById(req?.params?.id).populate(
-        "category"
-      );
-      return response.ok(res, product);
-    } catch (error) {
-      return response.error(res, error);
+getProductById: async (req, res) => {
+  try {
+    const product = await Product.findById(req?.params?.id).populate("category");
+
+    if (!product) {
+      return response.error(res, "Product not found");
     }
-  },
+
+    const favourite = req.query.user
+      ? await Favourite.findOne({
+          product: product._id,
+          user: req.query.user,
+        })
+      : null;
+
+    const productObj = product.toObject(); // safely convert Mongoose doc to plain JS object
+
+    const d = {
+      ...productObj,
+      favourite: !!favourite, // boolean conversion
+    };
+
+    return response.ok(res, d);
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
+
 
   getProductBycategoryId: async (req, res) => {
     console.log(req.query);
     try {
       let cond = {};
-      if (req?.query?.category) {
-        cond.category = { $in: [req?.query?.category] };
-      }
-      if (req?.query?.product) {
-        cond._id = { $ne: req?.query?.product };
-      }
-      let sort_by = {};
-      if (req.query.is_top) {
-        cond.is_top = true;
-      }
-      if (req.query.is_new) {
-        cond.is_new = true;
+
+      if (req.query.category) {
+        cond.category = { $in: [req.query.category] };
       }
 
-      if (req.query.colors && req.query.colors.length > 0) {
-        cond.varients = {
-          $ne: [],
-          $elemMatch: { color: { $in: req.query.colors } },
-        };
+      if (req.query.product) {
+        cond._id = { $ne: req.query.product };
       }
 
       if (req.query.brand) {
-        cond.brand = req.query.brand;
+        cond.brandName = req.query.brand;
       }
 
-      if (req.query.gender) {
-        let c = {};
-        if (req.query.gender === "Male") {
-          cond.$or = [{ gender: req.query.gender }, { gender: "Men's" }];
-        }
-        if (req.query.gender === "Female") {
-          cond.$or = [
-            { gender: req.query.gender },
-            { gender: "Ladies" },
-            { gender: "Ladies'" },
-          ];
-        }
-        if (req.query.gender === "Unisex") {
-          cond.$or = [{ gender: req.query.gender }, { gender: "" }];
-        }
+      // Parse colors if passed (assuming they come as comma-separated string)
+      if (req.query.colors) {
+        const colors = Array.isArray(req.query.colors)
+          ? req.query.colors
+          : req.query.colors.split(",");
+
+        cond.varients = {
+          $elemMatch: {
+            color: { $in: colors },
+          },
+        };
       }
 
-      if (req.query.sort_by) {
-        if (req.query.sort_by === "featured" || req.query.sort_by === "new") {
-          sort_by.createdAt = -1;
-        }
+      if (req.query.Size) {
+        const sizes = Array.isArray(req.query.Size)
+          ? req.query.Size
+          : req.query.Size.split(",");
 
-        if (req.query.sort_by === "old") {
-          sort_by.createdAt = 1;
-        }
-
-        if (req.query.sort_by === "a_z") {
-          sort_by.name = 1;
-        }
-
-        if (req.query.sort_by === "z_a") {
-          sort_by.name = -1;
-        }
-
-        if (req.query.sort_by === "low") {
-          sort_by.price = 1;
-        }
-
-        if (req.query.sort_by === "high") {
-          sort_by.price = -1;
-        }
-      } else {
-        sort_by.createdAt = -1;
+        cond["varients.selected"] = {
+          $elemMatch: {
+            value: { $in: sizes },
+          },
+        };
       }
+
+      // Filter based on price range inside price_slot array
+      if (req.query.minPrice && req.query.maxPrice) {
+        const min = parseFloat(req.query.minPrice);
+        const max = parseFloat(req.query.maxPrice);
+
+        cond["price_slot.Offerprice"] = {
+          $gte: min,
+          $lte: max,
+        };
+      }
+      console.log(cond);
+
       let skip = (req.query.page - 1) * req.query.limit;
-      let product = await Product.find(cond)
-        .populate("category brand")
-        .sort(sort_by)
+
+      const product = await Product.find(cond)
+        .populate("category")
         .skip(skip)
-        .limit(req.query.limit);
-      let d = await Product.countDocuments(cond);
-      console.log(d);
-      return response.ok(res, { product, length: d });
+        .limit(parseInt(req.query.limit));
+
+      const total = await Product.countDocuments(cond);
+
+      return response.ok(res, { product, length: total });
     } catch (error) {
+      console.error(error);
       return response.error(res, error);
     }
   },
@@ -296,8 +305,32 @@ module.exports = {
           },
         },
       ]);
+      const d = cleanAndUnique(product[0].uniqueColors);
+      return response.ok(res, { uniqueColors: d });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getBrand: async (req, res) => {
+    try {
+      const product = await Product.aggregate([
+        {
+          $group: {
+            _id: "$brandName",
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            brandName: "$_id",
+          },
+        },
+      ]);
 
-      return response.ok(res, product[0]);
+      // Optional: remove duplicates if needed (though $group already handles it)
+      const brandNames = product.map((item) => item.brandName);
+
+      return response.ok(res, { uniqueBrandName: brandNames });
     } catch (error) {
       return response.error(res, error);
     }
@@ -499,20 +532,20 @@ module.exports = {
     }
   },
 
-//   getrequestProductbyid: async (req, res) => {
-//     try {
-//       console.log("Request ID:", req.params.id);
+  //   getrequestProductbyid: async (req, res) => {
+  //     try {
+  //       console.log("Request ID:", req.params.id);
 
-//       const product = await ProductRequest.findById(req.params.id)
-//         .populate("user", "-password")
-//         .populate("productDetail.product"); 
+  //       const product = await ProductRequest.findById(req.params.id)
+  //         .populate("user", "-password")
+  //         .populate("productDetail.product");
 
-//       return response.ok(res, product);
-//     } catch (error) {
-//       console.error("Error in getrequestProductbyid:", error);
-//       return response.error(res, error);
-//     }
-//   },
+  //       return response.ok(res, product);
+  //     } catch (error) {
+  //       console.error("Error in getrequestProductbyid:", error);
+  //       return response.error(res, error);
+  //     }
+  //   },
 
   updaterequestProduct: async (req, res) => {
     try {
@@ -527,59 +560,58 @@ module.exports = {
     }
   },
 
-    getOrderBySeller: async (req, res) => {
-        try {
-            const cond = {};
+  getOrderBySeller: async (req, res) => {
+    try {
+      const cond = {};
 
-            if (req.body.curentDate) {
-                const date = new Date(req.body.curentDate);
-                const nextDay = new Date(date);
-                nextDay.setDate(date.getDate() + 1);
-                cond.createdAt = { $gte: date, $lte: nextDay };
-            }
+      if (req.body.curentDate) {
+        const date = new Date(req.body.curentDate);
+        const nextDay = new Date(date);
+        nextDay.setDate(date.getDate() + 1);
+        cond.createdAt = { $gte: date, $lte: nextDay };
+      }
 
-            if (req.body.orderId) {
-                const orderId = req.body.orderId.trim();
-                if (orderId.length > 0) {
-                    cond.orderId = { $regex: orderId, $options: 'i' };
-                }
-            }
-
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
-            const skip = (page - 1) * limit;
-
-            const products = await ProductRequest.find(cond)
-                .populate("user", "-password -varients")
-                .populate("productDetail.product")
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit);
-
-            const totalItems = await ProductRequest.countDocuments(cond);
-
-            return res.status(200).json({
-                status: true,
-                data: products.map((item, index) => ({
-                    ...(item.toObject?.() || item),
-                    indexNo: skip + index + 1,
-                })),
-                pagination: {
-                    totalItems,
-                    totalPages: Math.ceil(totalItems / limit),
-                    currentPage: page,
-                    itemsPerPage: limit,
-                },
-            });
-        } catch (error) {
-            console.error("Error in getOrderBySeller:", error);
-            return res.status(500).json({
-                status: false,
-                message: error.message || "An error occurred"
-            });
+      if (req.body.orderId) {
+        const orderId = req.body.orderId.trim();
+        if (orderId.length > 0) {
+          cond.orderId = { $regex: orderId, $options: "i" };
         }
-    },
+      }
 
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      const products = await ProductRequest.find(cond)
+        .populate("user", "-password -varients")
+        .populate("productDetail.product")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const totalItems = await ProductRequest.countDocuments(cond);
+
+      return res.status(200).json({
+        status: true,
+        data: products.map((item, index) => ({
+          ...(item.toObject?.() || item),
+          indexNo: skip + index + 1,
+        })),
+        pagination: {
+          totalItems,
+          totalPages: Math.ceil(totalItems / limit),
+          currentPage: page,
+          itemsPerPage: limit,
+        },
+      });
+    } catch (error) {
+      console.error("Error in getOrderBySeller:", error);
+      return res.status(500).json({
+        status: false,
+        message: error.message || "An error occurred",
+      });
+    }
+  },
 
   getrequestProductbyid: async (req, res) => {
     try {

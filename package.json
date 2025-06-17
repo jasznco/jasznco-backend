@@ -38,7 +38,8 @@
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.10",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "underscore": "^1.13.7"
   },
   "_moduleAliases": {
     "@config": "src/config",
