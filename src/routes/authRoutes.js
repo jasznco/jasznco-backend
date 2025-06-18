@@ -42,9 +42,9 @@ router.post("/createProduct", product.createProduct);
 router.get("/getProduct", product.getProduct);
 router.post("/updateProduct", product.updateProduct);
 router.delete("/deleteProduct/:id", product.deleteProduct);
-router.get("/getProductById/:id", product.getProductById);
+router.get("/getProductById", product.getProductById);
 router.get("/getProductBycategoryId", product.getProductBycategoryId);
-
+router.get("/getProductbycategory/:id", product.getProductbycategory);
 router.get("/getProductBythemeId/:id", product.getProductBythemeId);
 router.post("/createProductRequest", product.requestProduct);
 router.get("/getrequestProduct", authenticate, product.getrequestProduct);

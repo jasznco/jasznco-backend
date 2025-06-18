@@ -20,6 +20,19 @@ module.exports = {
   createProduct: async (req, res) => {
     try {
       const payload = req?.body || {};
+      const generateSlug = (name) => {
+        let slug = name
+          .toString()
+          .toLowerCase()
+          .trim()
+          .replace(/[\s\W-]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        slug = `${slug}-abc`;
+
+        return slug;
+      };
+      payload.slug = generateSlug(payload.name || "");
 
       const existingProduct = await Product.findOne({
         name: payload.name,
@@ -35,7 +48,6 @@ module.exports = {
         });
       }
 
-      // If no duplicate, create new product
       const newProduct = new Product(payload);
       await newProduct.save();
 
@@ -110,34 +122,37 @@ module.exports = {
     }
   },
 
-getProductById: async (req, res) => {
-  try {
-    const product = await Product.findById(req?.params?.id).populate("category");
+  getProductById: async (req, res) => {
+    try {
+      const product = await Product.findOne({
+        slug: req?.query?.slug,
+      }).populate("category");
 
-    if (!product) {
-      return response.error(res, "Product not found");
+      if (!product) {
+        return response.error(res, "Product not found");
+      }
+      console.log("User ID:", req.query.user);
+      console.log("Product ID:", product._id);
+
+      const favourite = req.query.user
+        ? await Favourite.findOne({
+            product: product._id,
+            user: req.query.user,
+          })
+        : null;
+
+      const productObj = product.toObject();
+
+      const d = {
+        ...productObj,
+        favourite: !!favourite,
+      };
+
+      return response.ok(res, d);
+    } catch (error) {
+      return response.error(res, error);
     }
-
-    const favourite = req.query.user
-      ? await Favourite.findOne({
-          product: product._id,
-          user: req.query.user,
-        })
-      : null;
-
-    const productObj = product.toObject(); // safely convert Mongoose doc to plain JS object
-
-    const d = {
-      ...productObj,
-      favourite: !!favourite, // boolean conversion
-    };
-
-    return response.ok(res, d);
-  } catch (error) {
-    return response.error(res, error);
-  }
-},
-
+  },
 
   getProductBycategoryId: async (req, res) => {
     console.log(req.query);
@@ -331,6 +346,16 @@ getProductById: async (req, res) => {
       const brandNames = product.map((item) => item.brandName);
 
       return response.ok(res, { uniqueBrandName: brandNames });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getProductbycategory: async (req, res) => {
+    try {
+      let product = await Product.find({ category: req.params.id }).populate(
+        "category"
+      );
+      return response.ok(res, product);
     } catch (error) {
       return response.error(res, error);
     }

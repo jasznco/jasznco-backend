@@ -17,7 +17,9 @@ const productchema = new mongoose.Schema(
       _id: mongoose.Schema.Types.ObjectId,
       name: String,
     },
-
+    slug: {
+      type: String,
+    },
     brandName: {
       type: String,
     },
