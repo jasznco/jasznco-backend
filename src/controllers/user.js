@@ -103,7 +103,7 @@ module.exports = {
       if (!req.file) {
         return response.badRequest(res, { message: "No file uploaded." });
       }
-      console.log(req);
+      console.log(req.file);
       return response.ok(res, {
         message: "File uploaded successfully.",
         fileUrl: req.file.path, // Cloudinary file URL

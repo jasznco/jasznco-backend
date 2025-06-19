@@ -122,7 +122,7 @@ module.exports = {
     }
   },
 
-  getProductById: async (req, res) => {
+  getProductBySlug: async (req, res) => {
     try {
       const product = await Product.findOne({
         slug: req?.query?.slug,
@@ -153,6 +153,20 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
+getProductById: async (req, res) => {
+  try {
+    const product = await Product.findOne({ _id: req.params.id }).populate("category");
+
+    if (!product) {
+      return response.error(res, "Product not found");
+    }
+
+    return response.ok(res, product);
+  } catch (error) {
+    return response.error(res, error);
+  }
+},
 
   getProductBycategoryId: async (req, res) => {
     console.log(req.query);

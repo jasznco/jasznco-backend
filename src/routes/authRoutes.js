@@ -16,6 +16,7 @@ const Category = require("@controllers/Catgeory");
 const product = require("@controllers/product");
 const upload = require("@services/upload");
 const favourite = require("@controllers/Favorite")
+const Content = require("@controllers/ContentManagement");
 
 
 
@@ -42,7 +43,8 @@ router.post("/createProduct", product.createProduct);
 router.get("/getProduct", product.getProduct);
 router.post("/updateProduct", product.updateProduct);
 router.delete("/deleteProduct/:id", product.deleteProduct);
-router.get("/getProductById", product.getProductById);
+router.get("/getProductById/:id", product.getProductById);
+router.get("/getProductBySlug", product.getProductBySlug);
 router.get("/getProductBycategoryId", product.getProductBycategoryId);
 router.get("/getProductbycategory/:id", product.getProductbycategory);
 router.get("/getProductBythemeId/:id", product.getProductBythemeId);
@@ -82,5 +84,10 @@ router.get("/getSubcategories", Category.getSubcategories);
 router.delete("/deleteSubcategory", Category.deleteSubcategory);
 router.post("/updateCategory", Category.updateCategory);
 router.post("/updateSubcategory", Category.updateSubcategory);
+
+router.post("/content", authenticate, Content.createContent);
+router.get("/content",Content.getContent);
+router.post("/content/update", authenticate, Content.updateContent);
+
 
 module.exports = router;
