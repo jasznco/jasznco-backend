@@ -393,10 +393,7 @@ getProductById: async (req, res) => {
       let cond = {
         $or: [
           { name: { $regex: req.query.key, $options: "i" } },
-          // { categoryName: { $in: [{ $regex: req.query.key, $options: "i" }] } },
-          // { themeName: { $in: [{ $regex: req.query.key, $options: "i" }] } },
           { brandName: { $regex: req.query.key, $options: "i" } },
-          // { details: { $regex: q.location, $options: "i" } },
         ],
       };
       const product = await Product.find(cond).sort({ createdAt: -1 });

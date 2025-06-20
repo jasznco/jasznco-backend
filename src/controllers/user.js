@@ -113,4 +113,50 @@ module.exports = {
       return response.error(res, error);
     }
   },
+  getUserList: async (req, res) => {
+    try {
+      const cond = { role: req.body.type };
+
+      // // Check if page & limit are provided
+      // const page = parseInt(req.query.page);
+      // const limit = parseInt(req.query.limit);
+
+      let users;
+      // let totalItems;
+      // let pagination = null;
+
+      // if (!page || !limit) {
+      //   // No pagination — return all data
+      //   users = await User.find(cond).sort({ createdAt: -1 });
+      //   totalItems = users.length;
+      // } else {
+      //   // Paginate
+      //   const skip = (page - 1) * limit;
+      //   totalItems = await User.countDocuments(cond);
+      //   const totalPages = Math.ceil(totalItems / limit);
+
+      //   users = await User.find(cond)
+      //     .sort({ createdAt: -1 })
+      //     .skip(skip)
+      //     .limit(limit);
+
+      //   pagination = {
+      //     totalItems,
+      //     totalPages,
+      //     currentPage: page,
+      //     itemsPerPage: limit,
+      //   };
+      // }
+
+      users = await User.find(cond).sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        status: true,
+        data: users,
+        // pagination,
+      });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
 };

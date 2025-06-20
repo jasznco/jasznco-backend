@@ -28,6 +28,12 @@ const productrequestchema = new mongoose.Schema(
         total: {
           type: Number,
         },
+        color: {
+          type: String,
+        },
+        size: {
+          type: String,
+        },
         qty: {
           type: Number,
         },
@@ -58,7 +64,7 @@ const productrequestchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category", 
+      ref: "Category",
     },
     seller_id: {
       type: mongoose.Schema.Types.ObjectId,

@@ -89,5 +89,7 @@ router.post("/content", authenticate, Content.createContent);
 router.get("/content",Content.getContent);
 router.post("/content/update", authenticate, Content.updateContent);
 
+router.get("/productsearch", product.productSearch)
+router.post("/getUserList", user.getUserList)
 
 module.exports = router;
