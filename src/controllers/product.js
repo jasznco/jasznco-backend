@@ -156,7 +156,7 @@ module.exports = {
 
 getProductById: async (req, res) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id }).populate("category");
+    const product = await Product.findOne({ _id: req.params.id }).populate("category Brand");
 
     if (!product) {
       return response.error(res, "Product not found");

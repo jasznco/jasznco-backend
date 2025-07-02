@@ -23,6 +23,10 @@ const productchema = new mongoose.Schema(
     brandName: {
       type: String,
     },
+    Brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+    },
     name: {
       type: String,
     },

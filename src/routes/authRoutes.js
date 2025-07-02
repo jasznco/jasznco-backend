@@ -17,7 +17,7 @@ const product = require("@controllers/product");
 const upload = require("@services/upload");
 const favourite = require("@controllers/Favorite")
 const Content = require("@controllers/ContentManagement");
-
+const Brand = require("@controllers/BrandController");
 
 
 
@@ -91,5 +91,11 @@ router.post("/content/update", authenticate, Content.updateContent);
 
 router.get("/productsearch", product.productSearch)
 router.post("/getUserList", user.getUserList)
+
+router.post("/createBrand", Brand.createBrand);
+router.get("/getBrands", Brand.getBrands);
+router.delete("/deleteBrand", Brand.deleteBrand);
+router.post("/updateBrand", Brand.updateBrand);
+
 
 module.exports = router;
