@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Favourite = require("@models/Favorite")
-const response = require("./../../responses");
+const response = require("../../responses");
 
 module.exports = {
 

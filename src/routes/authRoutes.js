@@ -15,11 +15,10 @@ const Blog = require("@controllers/blogController");
 const Category = require("@controllers/Catgeory");
 const product = require("@controllers/product");
 const upload = require("@services/upload");
-const favourite = require("@controllers/Favorite")
+const favourite = require("@controllers/Favorite");
 const Content = require("@controllers/ContentManagement");
 const Brand = require("@controllers/BrandController");
-
-
+const { chargeCard, testProductionJWT } = require("@controllers/poyntController");
 
 const router = express.Router();
 router.post("/auth/login", login);
@@ -86,16 +85,27 @@ router.post("/updateCategory", Category.updateCategory);
 router.post("/updateSubcategory", Category.updateSubcategory);
 
 router.post("/content", authenticate, Content.createContent);
-router.get("/content",Content.getContent);
+router.get("/content", Content.getContent);
 router.post("/content/update", authenticate, Content.updateContent);
 
-router.get("/productsearch", product.productSearch)
-router.post("/getUserList", user.getUserList)
+router.get("/productsearch", product.productSearch);
+router.post("/getUserList", user.getUserList);
 
 router.post("/createBrand", Brand.createBrand);
 router.get("/getBrands", Brand.getBrands);
 router.delete("/deleteBrand", Brand.deleteBrand);
 router.post("/updateBrand", Brand.updateBrand);
+
+router.post("/charge", chargeCard);
+router.post("/testProductionJWT", testProductionJWT);
+
+router.post("/mock-payment", (req, res) => {
+  return res.json({
+    success: true,
+    message: "Mock payment successful",
+    transactionId: "txn_mock_" + Date.now(),
+  });
+});
 
 
 module.exports = router;

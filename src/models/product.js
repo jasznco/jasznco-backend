@@ -45,9 +45,7 @@ const productchema = new mongoose.Schema(
     price: {
       type: Number,
     },
-    offer: {
-      type: Number,
-    },
+   
     pieces: {
       type: Number,
     },
