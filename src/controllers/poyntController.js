@@ -2,8 +2,8 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const crypto = require("crypto");
 
-// const POYNT_BASE_URL = "https://services.poynt.net";
-const POYNT_BASE_URL ="https://services-emu.poynt.net"
+const POYNT_BASE_URL = "https://services.poynt.net";
+// const POYNT_BASE_URL ="https://services-emu.poynt.net"
 const POYNT_TOKEN_URL = `${POYNT_BASE_URL}/token`;
 
 async function getMerchantAccessToken() {

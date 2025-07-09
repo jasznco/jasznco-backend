@@ -18,7 +18,12 @@ const upload = require("@services/upload");
 const favourite = require("@controllers/Favorite");
 const Content = require("@controllers/ContentManagement");
 const Brand = require("@controllers/BrandController");
-const { chargeCard, testProductionJWT } = require("@controllers/poyntController");
+const {
+  chargeCard,
+  testProductionJWT,
+} = require("@controllers/poyntController");
+const setting = require("@controllers/setting");
+
 
 const router = express.Router();
 router.post("/auth/login", login);
@@ -99,6 +104,11 @@ router.post("/updateBrand", Brand.updateBrand);
 router.post("/charge", chargeCard);
 router.post("/testProductionJWT", testProductionJWT);
 
+router.post("/createsetting", authenticate, setting.createSetting);
+router.get("/getsetting",setting.getSetting);
+router.post("/updatesetting",authenticate,setting.updateSetting);
+
+
 router.post("/mock-payment", (req, res) => {
   return res.json({
     success: true,
@@ -106,6 +116,5 @@ router.post("/mock-payment", (req, res) => {
     transactionId: "txn_mock_" + Date.now(),
   });
 });
-
 
 module.exports = router;
