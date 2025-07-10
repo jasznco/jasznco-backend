@@ -41,6 +41,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
+    "stripe": "^18.3.0",
     "underscore": "^1.13.7"
   },
   "_moduleAliases": {
