@@ -154,19 +154,21 @@ module.exports = {
     }
   },
 
-getProductById: async (req, res) => {
-  try {
-    const product = await Product.findOne({ _id: req.params.id }).populate("category Brand");
+  getProductById: async (req, res) => {
+    try {
+      const product = await Product.findOne({ _id: req.params.id }).populate(
+        "category Brand"
+      );
 
-    if (!product) {
-      return response.error(res, "Product not found");
+      if (!product) {
+        return response.error(res, "Product not found");
+      }
+
+      return response.ok(res, product);
+    } catch (error) {
+      return response.error(res, error);
     }
-
-    return response.ok(res, product);
-  } catch (error) {
-    return response.error(res, error);
-  }
-},
+  },
 
   getProductBycategoryId: async (req, res) => {
     console.log(req.query);
@@ -185,7 +187,6 @@ getProductById: async (req, res) => {
         cond.brandName = req.query.brand;
       }
 
-      // Parse colors if passed (assuming they come as comma-separated string)
       if (req.query.colors) {
         const colors = Array.isArray(req.query.colors)
           ? req.query.colors
@@ -210,7 +211,6 @@ getProductById: async (req, res) => {
         };
       }
 
-      // Filter based on price range inside price_slot array
       if (req.query.minPrice && req.query.maxPrice) {
         const min = parseFloat(req.query.minPrice);
         const max = parseFloat(req.query.maxPrice);
@@ -227,6 +227,7 @@ getProductById: async (req, res) => {
       const product = await Product.find(cond)
         .populate("category")
         .skip(skip)
+        .sort({ createdAt: -1 })
         .limit(parseInt(req.query.limit));
 
       const total = await Product.countDocuments(cond);
