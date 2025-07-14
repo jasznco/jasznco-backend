@@ -20,7 +20,7 @@ const Content = require("@controllers/ContentManagement");
 const Brand = require("@controllers/BrandController");
 const stripe = require("@controllers/Stripe");
 const setting = require("@controllers/setting");
-
+const flashSaleController = require("@controllers/sale");
 
 const router = express.Router();
 router.post("/auth/login", login);
@@ -99,10 +99,47 @@ router.delete("/deleteBrand", Brand.deleteBrand);
 router.post("/updateBrand", Brand.updateBrand);
 
 router.post("/createsetting", authenticate, setting.createSetting);
-router.get("/getsetting",setting.getSetting);
-router.post("/updatesetting",authenticate,setting.updateSetting);
-
+router.get("/getsetting", setting.getSetting);
+router.post("/updatesetting", authenticate, setting.updateSetting);
 
 router.post("/poststripe", stripe.poststripe);
+
+router.post("/createSale", authenticate, flashSaleController.createFlashSale);
+router.get("/getFlashSale", flashSaleController.getFlashSale);
+router.get("/getActiveFlashSales", flashSaleController.getActiveFlashSales);
+router.get(
+  "/getFlashSaleByProduct/:productId",
+  flashSaleController.getFlashSaleByProduct
+);
+router.put(
+  "/updateFlashSale/:id",
+  authenticate,
+  flashSaleController.updateFlashSale
+);
+router.put(
+  "/toggleFlashSaleStatus/:id",
+  authenticate,
+  flashSaleController.toggleFlashSaleStatus
+);
+router.delete(
+  "/deleteFlashSale/:id",
+  authenticate,
+  flashSaleController.deleteFlashSale
+);
+router.delete(
+  "/deleteAllFlashSales",
+  authenticate,
+  flashSaleController.deleteAllFlashSales
+);
+router.delete(
+  "/deleteSale",
+  authenticate,
+  flashSaleController.deleteAllFlashSales
+);
+router.post(
+  "/deleteFlashSaleProduct",
+  authenticate,
+  flashSaleController.deleteFlashSale
+);
 
 module.exports = router;
