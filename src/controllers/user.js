@@ -98,7 +98,23 @@ module.exports = {
       });
     }
   },
+  deleteReview: async (req, res) => {
+    try {
+      const ID = req.params.id;
+      console.log(ID);
+      const Re = await Review.findByIdAndDelete(ID);
+      console.log(Re);
 
+      if (!Re) {
+        return response.notFound(res, { message: "Not Found" });
+      }
+
+      return response.ok(res, { message: "Review deleted successfully" });
+    } catch (error) {
+      console.log(error);
+      return response.error(res, error);
+    }
+  },
   fileUpload: async (req, res) => {
     try {
       if (!req.file) {

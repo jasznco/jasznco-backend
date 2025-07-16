@@ -68,6 +68,7 @@ router.get("/getFavourite", authenticate, favourite.getFavourite);
 
 router.post("/giverate", authenticate, user.giverate);
 router.post("/getReview", authenticate, user.getReview);
+router.delete("/deleteReview/:id", user.deleteReview);
 
 router.post("/getOrderBySeller", authenticate, product.getOrderBySeller);
 
