@@ -175,9 +175,19 @@ module.exports = {
     try {
       let cond = {};
 
-      if (req.query.category) {
-        cond.category = { $in: [req.query.category] };
+      if (req.query.Category) {
+        cond.categoryName = { $in: [req.query.Category] };
       }
+
+      if (req.query["Subcategory[]"]) {
+        const subcategories = Array.isArray(req.query["Subcategory[]"])
+          ? req.query["Subcategory[]"]
+          : [req.query["Subcategory[]"]];
+
+        cond.subCategoryName = { $in: subcategories };
+      }
+
+      console.log(cond);
 
       if (req.query.product) {
         cond._id = { $ne: req.query.product };
@@ -210,14 +220,17 @@ module.exports = {
           },
         };
       }
-
       if (req.query.minPrice && req.query.maxPrice) {
         const min = parseFloat(req.query.minPrice);
         const max = parseFloat(req.query.maxPrice);
 
-        cond["price_slot.Offerprice"] = {
-          $gte: min,
-          $lte: max,
+        cond["price_slot"] = {
+          $elemMatch: {
+            Offerprice: {
+              $gte: min,
+              $lte: max,
+            },
+          },
         };
       }
       console.log(cond);
@@ -484,12 +497,12 @@ module.exports = {
           if (!product) return;
 
           const colorToMatch = productItem.color;
-          const selectedSize = productItem.selected?.[0]?.value;
-          const quantityToReduce = Number(productItem.total || 0);
-
+          const selectedSize = productItem.size;
+          const quantityToReduce = Number(productItem.qty || 0);
+          console.log("qty", quantityToReduce);
           if (!colorToMatch || !selectedSize || !quantityToReduce) return;
 
-          const updatedVariants = product.variants.map((variant) => {
+          const updatedVariants = product.varients.map((variant) => {
             if (variant.color !== colorToMatch) return variant;
 
             const updatedSelected = variant.selected.map((sel) => {
@@ -504,7 +517,7 @@ module.exports = {
               }
               return sel;
             });
-
+            console.log("updatedSelected", updatedSelected);
             return {
               ...variant,
               selected: updatedSelected,
@@ -517,7 +530,7 @@ module.exports = {
               variants: updatedVariants,
               $inc: {
                 sold_pieces: quantityToReduce,
-                Quantity: -quantityToReduce,
+                pieces: -quantityToReduce,
               },
             },
             { new: true }

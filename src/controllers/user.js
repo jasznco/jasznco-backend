@@ -79,6 +79,7 @@ module.exports = {
       const allreview = await Review.find(cond)
         .populate("product posted_by")
         .skip(skip)
+        .sort({ createdAt: -1 })
         .limit(limit);
 
       const totalReviews = await Review.countDocuments(cond);
