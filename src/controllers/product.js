@@ -7,6 +7,8 @@ const Category = mongoose.model("Category");
 const response = require("./../../responses");
 const Favourite = require("@models/Favorite");
 const _ = require("underscore");
+const Review = require("@models/Review");
+const { getReview } = require("../helper/user");
 
 const cleanAndUnique = (data) => {
   return _.uniq(
@@ -128,11 +130,10 @@ module.exports = {
         slug: req?.query?.slug,
       }).populate("category");
 
-      if (!product) {
-        return response.error(res, "Product not found");
-      }
-      console.log("User ID:", req.query.user);
-      console.log("Product ID:", product._id);
+      let reviews = await Review.find({ product: product._id }).populate(
+        "posted_by",
+        "name"
+      );
 
       const favourite = req.query.user
         ? await Favourite.findOne({
@@ -145,6 +146,8 @@ module.exports = {
 
       const d = {
         ...productObj,
+        rating: await getReview(product._id),
+        reviews: reviews,
         favourite: !!favourite,
       };
 

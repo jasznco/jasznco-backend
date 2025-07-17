@@ -72,6 +72,17 @@ module.exports = {
         cond.user = req.params.id;
       }
 
+      if (req.body.selectedDate) {
+        const date = new Date(req.body.selectedDate);
+        const nextDay = new Date(date);
+        nextDay.setDate(date.getDate() + 1);
+
+        cond.createdAt = {
+          $gte: date,
+          $lt: nextDay,
+        };
+      }
+
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const skip = (page - 1) * limit;
@@ -84,20 +95,22 @@ module.exports = {
 
       const totalReviews = await Review.countDocuments(cond);
 
+      // Response
       res.status(200).json({
         success: true,
         data: allreview,
-        page: page,
-        totalReviews: totalReviews,
-        totalPages: Math.ceil(totalReviews / limit), // Calculate total pages
+        page,
+        totalReviews,
+        totalPages: Math.ceil(totalReviews / limit),
       });
     } catch (e) {
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: e.message,
       });
     }
   },
+
   deleteReview: async (req, res) => {
     try {
       const ID = req.params.id;

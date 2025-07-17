@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 const User = mongoose.model("User");
 const { scrypt, createDecipheriv, createCipheriv } = require("crypto");
+const Review = require("@models/Review");
 
 module.exports = {
   deleteUser: (condition) => {
@@ -41,4 +42,12 @@ module.exports = {
     return new Date(new Date().getTime() + minutes * 60000);
   },
 
+  getReview: async (productId) => {
+    const packageReview = await Review.find({ product: productId });
+    const pt = packageReview.reduce(
+      (maintotal, item) => maintotal + item.rating,
+      0
+    );
+    return packageReview.length ? pt / packageReview.length : 0;
+  },
 };

@@ -1,6 +1,7 @@
 "use strict";
 
 const mongoose = require("mongoose");
+const { object } = require("underscore");
 
 const pointSchema = new mongoose.Schema({
   type: {
@@ -73,7 +74,9 @@ const productrequestchema = new mongoose.Schema(
     total: {
       type: String,
     },
-
+    ShippingAddress: {
+      type: Object,
+    },
     location: {
       type: pointSchema,
     },
