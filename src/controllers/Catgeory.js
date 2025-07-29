@@ -7,7 +7,7 @@ const response = require("../../responses");
 module.exports = {
   createCategory: async (req, res) => {
     try {
-      const { name } = req.body;
+      const { name, Attribute } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
       }
@@ -17,7 +17,7 @@ module.exports = {
         .replace(/ /g, "-")
         .replace(/[^\w-]+/g, "");
 
-      const category = new Category({ name, slug });
+      const category = new Category({ name, slug, Attribute });
       const savedCategory = await category.save();
 
       return response.ok(res, savedCategory, {
@@ -79,12 +79,10 @@ module.exports = {
       category.Subcategory.push({ name });
       await category.save();
 
-      return res
-        .status(201)
-        .json({
-          message: "Subcategory added successfully",
-          subcategories: category.Subcategory,
-        });
+      return res.status(201).json({
+        message: "Subcategory added successfully",
+        subcategories: category.Subcategory,
+      });
     } catch (error) {
       return response.error(res, error);
     }
@@ -144,10 +142,9 @@ module.exports = {
     }
   },
 
-  // New method: updateCategory - update category name and slug
   updateCategory: async (req, res) => {
     try {
-      const { name, _id } = req.body;
+      const { name, _id, Attribute } = req.body;
       const slug = name
         .toLowerCase()
         .replace(/ /g, "-")
@@ -155,7 +152,7 @@ module.exports = {
 
       const updatedCategory = await Category.findByIdAndUpdate(
         _id,
-        { name, slug },
+        { name, slug, Attribute },
         { new: true }
       );
 

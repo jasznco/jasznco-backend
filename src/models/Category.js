@@ -1,26 +1,28 @@
-'use strict';
+"use strict";
 
-const mongoose = require('mongoose');
-const categorySchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+const categorySchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
+      type: String,
     },
     slug: {
-        type: String,
+      type: String,
     },
     popular: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
+    Attribute: [],
     Subcategory: [
-        {
-            name: { type: String },
-            
-        }
-    ]
-}, {
-    timestamps: true
-});
+      {
+        name: { type: String },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
-
-module.exports = mongoose.model('Category', categorySchema);
+module.exports = mongoose.model("Category", categorySchema);

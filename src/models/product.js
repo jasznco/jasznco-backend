@@ -45,7 +45,7 @@ const productchema = new mongoose.Schema(
     price: {
       type: Number,
     },
-   
+
     pieces: {
       type: Number,
     },
@@ -59,6 +59,7 @@ const productchema = new mongoose.Schema(
     parameter_type: {
       type: String,
     },
+    Attribute: [],
     price_slot: [],
   },
   {
