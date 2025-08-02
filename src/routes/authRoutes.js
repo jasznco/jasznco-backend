@@ -21,6 +21,7 @@ const Brand = require("@controllers/BrandController");
 const stripe = require("@controllers/Stripe");
 const setting = require("@controllers/setting");
 const flashSaleController = require("@controllers/sale");
+const instaImage = require("@controllers/instaImage");
 
 const router = express.Router();
 router.post("/auth/login", login);
@@ -103,6 +104,10 @@ router.post("/createsetting", authenticate, setting.createSetting);
 router.get("/getsetting", setting.getSetting);
 router.post("/updatesetting", authenticate, setting.updateSetting);
 
+router.post("/createInstaImage", authenticate, instaImage.createInstaImage);
+router.get("/getInstaImage", instaImage.getInstaImage);
+router.post("/updateInstaImage", authenticate, instaImage.updateInstaImage);
+
 router.post("/poststripe", stripe.poststripe);
 
 router.post("/createSale", authenticate, flashSaleController.createFlashSale);
@@ -142,5 +147,6 @@ router.post(
   authenticate,
   flashSaleController.deleteFlashSale
 );
+
 
 module.exports = router;
