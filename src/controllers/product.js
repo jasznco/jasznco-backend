@@ -9,6 +9,7 @@ const Favourite = require("@models/Favorite");
 const _ = require("underscore");
 const Review = require("@models/Review");
 const { getReview } = require("../helper/user");
+const mailNotification = require("./../services/mailNotification");
 
 const cleanAndUnique = (data) => {
   return _.uniq(
@@ -137,9 +138,9 @@ module.exports = {
 
       const favourite = req.query.user
         ? await Favourite.findOne({
-            product: product._id,
-            user: req.query.user,
-          })
+          product: product._id,
+          user: req.query.user,
+        })
         : null;
 
       const productObj = product.toObject();
@@ -490,8 +491,8 @@ module.exports = {
       payload.orderId = generatedOrderId;
 
       const newOrder = new ProductRequest(payload);
+     
       newOrder.orderId = generatedOrderId;
-
       await newOrder.save();
 
       await Promise.all(
@@ -540,6 +541,11 @@ module.exports = {
           );
         })
       );
+
+      await mailNotification.orderDelivered({
+        email: req?.body?.Email,
+        orderId: newOrder.orderId,
+      });
 
       return response.ok(res, {
         message: "Product request added successfully",

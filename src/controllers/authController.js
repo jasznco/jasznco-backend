@@ -4,9 +4,7 @@ const jwt = require('jsonwebtoken');
 const response = require("../../responses");
 const Verification = require('@models/verification');
 const userHelper = require("../helper/user");
-
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const mailNotification = require("./../services/mailNotification");
 
 module.exports = {
   register: async (req, res) => {
@@ -35,6 +33,11 @@ module.exports = {
       });
 
       await newUser.save();
+
+      await mailNotification.welcomeMail({
+        name: name,
+        email: email,
+      });
 
       const userResponse = await User.findById(newUser._id).select('-password');
 
@@ -115,23 +118,27 @@ module.exports = {
   sendOTP: async (req, res) => {
     try {
       const { email, firstName, lastName } = req.body;
-
+     
       const user = await User.findOne({ email });
 
       if (!user) {
         return response.badReq(res, { message: "Email does not exist." });
       }
 
-      // Combine first and last name from request
       const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
       const fullNameFromDB = user.name?.trim().toLowerCase();
-
+      console.log("fullNameFromRequest",fullNameFromRequest)
+       console.log("fullNameFromDB",fullNameFromDB)
       if (fullNameFromRequest !== fullNameFromDB) {
         return response.badReq(res, { message: "Name and email do not match our records." });
       }
 
-      // OTP logic
-      const ran_otp = '0000'; // temporary static OTP
+      let ran_otp = Math.floor(1000 + Math.random() * 9000);
+
+      await mailNotification.sendOTPmail({
+        code: ran_otp,
+        email: email,
+      });
 
       const ver = new Verification({
         email: email,
@@ -141,7 +148,6 @@ module.exports = {
       });
 
       await ver.save();
-
       const token = await userHelper.encode(ver._id);
 
       return response.ok(res, { message: "OTP sent.", token });
@@ -200,7 +206,7 @@ module.exports = {
       await Verification.findByIdAndDelete(verID);
       user.password = user.encryptPassword(password);
       await user.save();
-      //mailNotification.passwordChange({ email: user.email });
+      mailNotification.passwordChange({ email: user.email });
       return response.ok(res, { message: "Password changed ! Login now." });
     } catch (error) {
       return response.error(res, error);
@@ -208,35 +214,35 @@ module.exports = {
   },
 
   updateProfile: async (req, res) => {
-  try {
-    const { userId, ...updateData } = req.body;
+    try {
+      const { userId, ...updateData } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ status: false, message: 'User ID is required' });
+      if (!userId) {
+        return res.status(400).json({ status: false, message: 'User ID is required' });
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+        new: true,
+        runValidators: true,
+      }).select("-password");
+
+      if (!updatedUser) {
+        return res.status(404).json({ status: false, message: 'User not found' });
+      }
+
+      return res.status(200).json({
+        status: true,
+        message: 'Profile updated successfully',
+        data: updatedUser,
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return res.status(500).json({
+        status: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
     }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
-
-    if (!updatedUser) {
-      return res.status(404).json({ status: false, message: 'User not found' });
-    }
-
-    return res.status(200).json({
-      status: true,
-      message: 'Profile updated successfully',
-      data: updatedUser,
-    });
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    return res.status(500).json({
-      status: false,
-      message: 'Internal server error',
-      error: error.message,
-    });
-  }
-},
+  },
 
 };
