@@ -8,7 +8,7 @@ const {
   changePassword,
   updateProfile,
 } = require("@controllers/authController");
-const { contactUs, getAllContactUs } = require("@controllers/contactUs");
+const { contactUs, getAllContactUs ,updateStatus } = require("@controllers/contactUs");
 const { authenticate } = require("@middlewares/authMiddleware");
 const user = require("@controllers/user");
 const Blog = require("@controllers/blogController");
@@ -36,6 +36,7 @@ router.post("/user/fileupload", upload.single("file"), user.fileUpload);
 
 router.post("/contactUs", contactUs);
 router.post("/getContactUs", getAllContactUs);
+router.post("/updateStatus", updateStatus);
 
 router.post("/add-subscriber", user.addNewsLetter);
 router.get("/get-subscriber", user.getNewsLetter);
@@ -147,6 +148,6 @@ router.post(
   authenticate,
   flashSaleController.deleteFlashSale
 );
-
+updateStatus
 
 module.exports = router;

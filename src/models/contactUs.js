@@ -2,15 +2,14 @@
 const mongoose = require('mongoose');
 
 const contactSchema = new mongoose.Schema({
-    name:{
+    name: {
         type: String,
         required: true
     },
-    Email:{
+    Email: {
         type: String,
         required: true,
         match: [/.+@.+\..+/, 'Please fill a valid email address']
-
     },
     subject: {
         type: String,
@@ -19,6 +18,11 @@ const contactSchema = new mongoose.Schema({
     message: {
         type: String,
         required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'resolved', 'closed'],
+        default: 'pending',
     },
 }, { timestamps: true });
 

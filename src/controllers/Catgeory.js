@@ -7,7 +7,7 @@ const response = require("../../responses");
 module.exports = {
   createCategory: async (req, res) => {
     try {
-      const { name, Attribute } = req.body;
+      const { name, Attribute, notAvailableSubCategory } = req.body;
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
       }
@@ -17,7 +17,7 @@ module.exports = {
         .replace(/ /g, "-")
         .replace(/[^\w-]+/g, "");
 
-      const category = new Category({ name, slug, Attribute });
+      const category = new Category({ name, slug, Attribute, notAvailableSubCategory });
       const savedCategory = await category.save();
 
       return response.ok(res, savedCategory, {
@@ -60,7 +60,7 @@ module.exports = {
 
   addSubcategory: async (req, res) => {
     try {
-      const { name, categoryId } = req.body;
+      const { name, categoryId, Attribute } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(categoryId)) {
         return res.status(400).json({ message: "Invalid category ID" });
@@ -77,6 +77,7 @@ module.exports = {
       }
 
       category.Subcategory.push({ name });
+      category.Attribute = Attribute;
       await category.save();
 
       return res.status(201).json({
@@ -144,7 +145,7 @@ module.exports = {
 
   updateCategory: async (req, res) => {
     try {
-      const { name, _id, Attribute } = req.body;
+      const { name, _id, Attribute, notAvailableSubCategory } = req.body;
       const slug = name
         .toLowerCase()
         .replace(/ /g, "-")
@@ -152,7 +153,7 @@ module.exports = {
 
       const updatedCategory = await Category.findByIdAndUpdate(
         _id,
-        { name, slug, Attribute },
+        { name, slug, Attribute, notAvailableSubCategory },
         { new: true }
       );
 
@@ -171,7 +172,7 @@ module.exports = {
   // New method: updateSubcategory - update a subcategory name within a category
   updateSubcategory: async (req, res) => {
     try {
-      const { name, categoryId, _id } = req.body;
+      const { name, categoryId, Attribute } = req.body;
 
       const category = await Category.findById(categoryId);
       if (!category) {
@@ -184,6 +185,7 @@ module.exports = {
       }
 
       subcategory.name = name;
+      subcategory.Attribute = Attribute
       await category.save();
 
       return response.ok(res, subcategory, {

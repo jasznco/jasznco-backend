@@ -9,16 +9,17 @@ const categorySchema = new mongoose.Schema(
     slug: {
       type: String,
     },
-    popular: {
-      type: Boolean,
-      default: false,
-    },
     Attribute: [],
     Subcategory: [
       {
         name: { type: String },
+        Attribute : [],
       },
     ],
+    notAvailableSubCategory: {
+      type: Boolean,
+
+    }
   },
   {
     timestamps: true,

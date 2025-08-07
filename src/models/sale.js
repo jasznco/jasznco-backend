@@ -1,6 +1,7 @@
 "use strict";
 
 const mongoose = require("mongoose");
+const { object } = require("underscore");
 
 const flashSaleSchema = new mongoose.Schema(
   {
@@ -16,7 +17,18 @@ const flashSaleSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-
+    offerPrice: {
+      type: Number,
+    },
+    originalPrice: {
+      type: Number,
+    },
+    attribute: {
+      type: object,
+    },
+    variant: {
+      type: object
+    },
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",

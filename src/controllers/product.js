@@ -491,7 +491,7 @@ module.exports = {
       payload.orderId = generatedOrderId;
 
       const newOrder = new ProductRequest(payload);
-     
+
       newOrder.orderId = generatedOrderId;
       await newOrder.save();
 
@@ -501,25 +501,21 @@ module.exports = {
           if (!product) return;
 
           const colorToMatch = productItem.color;
-          const selectedSize = productItem.size;
           const quantityToReduce = Number(productItem.qty || 0);
-          console.log("qty", quantityToReduce);
-          if (!colorToMatch || !selectedSize || !quantityToReduce) return;
+
+          if (!colorToMatch || !quantityToReduce) return;
 
           const updatedVariants = product.varients.map((variant) => {
             if (variant.color !== colorToMatch) return variant;
 
             const updatedSelected = variant.selected.map((sel) => {
-              if (sel.value === selectedSize) {
-                return {
-                  ...sel,
-                  total: Math.max(
-                    Number(sel.total) - quantityToReduce,
-                    0
-                  ).toString(),
-                };
-              }
-              return sel;
+              return {
+                ...sel,
+                qty: Math.max(
+                  Number(sel.qty) - quantityToReduce,
+                  0
+                ).toString(),
+              };
             });
             console.log("updatedSelected", updatedSelected);
             return {

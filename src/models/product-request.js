@@ -35,6 +35,9 @@ const productrequestchema = new mongoose.Schema(
         size: {
           type: String,
         },
+        attribute: {
+          type: object
+        },
         qty: {
           type: Number,
         },
