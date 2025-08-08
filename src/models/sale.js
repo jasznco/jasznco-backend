@@ -17,6 +17,9 @@ const flashSaleSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    availableQty: {
+      type: Number,
+    },
     offerPrice: {
       type: Number,
     },
