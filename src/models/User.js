@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require("bcryptjs");
+const { object } = require('underscore');
 
 const userSchema = new mongoose.Schema(
   {
@@ -31,6 +32,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['User', 'Admin'], // Define user roles
       default: 'User',
+    },
+    shippingAddress: {
+      type: object,
     },
     createdAt: {
       type: Date,

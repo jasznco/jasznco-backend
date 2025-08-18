@@ -489,7 +489,6 @@ module.exports = {
       const generatedOrderId = `${storePrefix}-${datePart}-${orderPart}`;
 
       payload.orderId = generatedOrderId;
-
       const newOrder = new ProductRequest(payload);
 
       newOrder.orderId = generatedOrderId;
@@ -542,6 +541,12 @@ module.exports = {
         email: req?.body?.Email,
         orderId: newOrder.orderId,
       });
+
+      const user = await User.findById(payload.user);  // user document milega
+      console.log("User shipping address before:", user.shippingAddress);
+      user.shippingAddress = payload.ShippingAddress; // update field
+      await user.save();
+      console.log("User shipping address updated:", user.shippingAddress);
 
       return response.ok(res, {
         message: "Product request added successfully",
