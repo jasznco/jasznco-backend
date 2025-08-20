@@ -118,7 +118,7 @@ module.exports = {
   sendOTP: async (req, res) => {
     try {
       const { email, firstName, lastName } = req.body;
-     
+
       const user = await User.findOne({ email });
 
       if (!user) {
@@ -127,8 +127,8 @@ module.exports = {
 
       const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
       const fullNameFromDB = user.name?.trim().toLowerCase();
-      console.log("fullNameFromRequest",fullNameFromRequest)
-       console.log("fullNameFromDB",fullNameFromDB)
+      console.log("fullNameFromRequest", fullNameFromRequest)
+      console.log("fullNameFromDB", fullNameFromDB)
       if (fullNameFromRequest !== fullNameFromDB) {
         return response.badReq(res, { message: "Name and email do not match our records." });
       }
@@ -244,5 +244,30 @@ module.exports = {
       });
     }
   },
+  changePasswordFOrAdmin: async (req, res) => {
+    try {
+      const { password } = req.body;
+      const userId = req.user.id;
+      console.log("User ID:", userId);
+
+      let user = await User.findById(userId);
+      console.log("User ID:", user);
+
+      if (!user) {
+        return response.forbidden(res, { message: "User not found" });
+      }
+
+      if (user.role !== "Admin") {
+        return response.forbidden(res, { message: "Only admin can change password" });
+      }
+
+      user.password = user.encryptPassword(password);
+      await user.save();
+
+      return response.ok(res, { message: "Password changed successfully" });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  }
 
 };

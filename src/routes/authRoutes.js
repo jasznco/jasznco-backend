@@ -7,6 +7,7 @@ const {
   verifyOTP,
   changePassword,
   updateProfile,
+  changePasswordFOrAdmin
 } = require("@controllers/authController");
 const { contactUs, getAllContactUs ,updateStatus } = require("@controllers/contactUs");
 const { authenticate } = require("@middlewares/authMiddleware");
@@ -31,6 +32,7 @@ router.post("/auth/sendOTP", sendOTP);
 router.post("/auth/updateProfile", updateProfile);
 router.post("/auth/verifyOTP", verifyOTP);
 router.post("/auth/changePassword", changePassword);
+router.post("/auth/changePasswordForAdmin",authenticate, changePasswordFOrAdmin);
 
 router.post("/user/fileupload", upload.single("file"), user.fileUpload);
 
