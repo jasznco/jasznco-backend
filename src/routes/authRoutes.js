@@ -103,13 +103,12 @@ router.get("/getBrands", Brand.getBrands);
 router.delete("/deleteBrand", Brand.deleteBrand);
 router.post("/updateBrand", Brand.updateBrand);
 
-router.post("/createsetting", authenticate, setting.createSetting);
-router.get("/getsetting", setting.getSetting);
-router.post("/updatesetting", authenticate, setting.updateSetting);
 
-router.post("/createInstaImage", authenticate, instaImage.createInstaImage);
+router.get("/getsetting", setting.getSetting);
+router.post("/createOrUpdateImage",authenticate,setting.createOrUpdateImage);
+
 router.get("/getInstaImage", instaImage.getInstaImage);
-router.post("/updateInstaImage", authenticate, instaImage.updateInstaImage);
+router.post("/createOrUpdateInstaImage", authenticate, instaImage.createOrUpdateInstaImage);
 
 router.post("/poststripe", stripe.poststripe);
 

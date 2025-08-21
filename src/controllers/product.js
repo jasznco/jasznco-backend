@@ -179,9 +179,10 @@ module.exports = {
     try {
       let cond = {};
 
-      if (req.query.Category) {
+      if (req.query.Category && req.query.Category !== "All Category") {
         cond.categoryName = { $in: [req.query.Category] };
       }
+
 
       if (req.query["Subcategory[]"]) {
         const subcategories = Array.isArray(req.query["Subcategory[]"])
@@ -213,17 +214,6 @@ module.exports = {
         };
       }
 
-      if (req.query.Size) {
-        const sizes = Array.isArray(req.query.Size)
-          ? req.query.Size
-          : req.query.Size.split(",");
-
-        cond["varients.selected"] = {
-          $elemMatch: {
-            value: { $in: sizes },
-          },
-        };
-      }
       if (req.query.minPrice && req.query.maxPrice) {
         const min = parseFloat(req.query.minPrice);
         const max = parseFloat(req.query.maxPrice);
@@ -237,6 +227,7 @@ module.exports = {
           },
         };
       }
+
       console.log(cond);
 
       let skip = (req.query.page - 1) * req.query.limit;

@@ -9,9 +9,9 @@ const settingSchema = new mongoose.Schema(
         image: {
           type: String,
         },
-        product_id: {
+        Category: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+          ref: "Category",
         },
       },
     ],
