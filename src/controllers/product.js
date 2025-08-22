@@ -117,10 +117,29 @@ module.exports = {
 
   getProduct: async (req, res) => {
     try {
+      let page = parseInt(req.query.page) || 1;
+      let limit = parseInt(req.query.limit);
+      let skip = (page - 1) * limit;
+
       let product = await Product.find()
         .populate("category")
-        .sort({ createdAt: -1 });
-      return response.ok(res, product);
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      let totalProducts = await Product.countDocuments();
+      const totalPages = Math.ceil(totalProducts / limit);
+
+      return res.status(200).json({
+        status: true,
+        data: product,
+        pagination: {
+          totalItems: totalProducts,
+          totalPages: totalPages,
+          currentPage: page,
+          itemsPerPage: limit,
+        },
+      });
     } catch (error) {
       return response.error(res, error);
     }
