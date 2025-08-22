@@ -44,4 +44,32 @@ module.exports = {
         }
     },
 
+    createOrUpdateContactInfo: async (req, res) => {
+        try {
+            const { Address, MobileNo } = req.body;
+            const setting = await Setting.findOneAndUpdate(
+                {}, 
+                {
+                    $set: {
+                        ...(Address !== undefined && { Address }),
+                        ...(MobileNo !== undefined && { MobileNo })
+                    }
+                },
+                { new: true, upsert: true } 
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: "Contact Info updated successfully!",
+                data: setting,
+            });
+        } catch (e) {
+            return res.status(500).json({
+                success: false,
+                message: e.message,
+            });
+        }
+    },
+
+
 }

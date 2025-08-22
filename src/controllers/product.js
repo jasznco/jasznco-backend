@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("@models/product");
 const ProductRequest = require("@models/product-request");
+const ContactUs = require('@models/contactUs');
 const User = mongoose.model("User");
 const { DateTime } = require("luxon"); // still can be kept if needed elsewhere
 const Category = mongoose.model("Category");
@@ -583,20 +584,7 @@ module.exports = {
     }
   },
 
-  //   getrequestProductbyid: async (req, res) => {
-  //     try {
-  //       console.log("Request ID:", req.params.id);
 
-  //       const product = await ProductRequest.findById(req.params.id)
-  //         .populate("user", "-password")
-  //         .populate("productDetail.product");
-
-  //       return response.ok(res, product);
-  //     } catch (error) {
-  //       console.error("Error in getrequestProductbyid:", error);
-  //       return response.error(res, error);
-  //     }
-  //   },
 
   updaterequestProduct: async (req, res) => {
     try {
@@ -686,4 +674,108 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
+  dashboarddetails: async (req, res) => {
+    try {
+      const allTransactions = await ProductRequest.find({});
+      let totalAmount = 0;
+
+      allTransactions.forEach((txn) => {
+        totalAmount += Number(txn.total) || 0;
+      });
+
+      const allCategories = await Category.countDocuments();
+      const totalUsers = await User.countDocuments({ role: "User" });
+      const totalFeedbacks = await ContactUs.countDocuments();
+
+      const details = {
+        totalTransactionAmount: totalAmount.toFixed(2),
+        totalCategories: allCategories,
+        totalUsers: totalUsers,
+        totalFeedbacks: totalFeedbacks,
+      };
+
+      return response.ok(res, details);
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getMonthlySales: async (req, res) => {
+    const year = parseInt(req.query.year);
+
+    if (!year || isNaN(year)) {
+      return res.status(400).json({ success: false, message: "Invalid year" });
+    }
+
+    try {
+      const start = new Date(`${year}-01-01`);
+      const end = new Date(`${year + 1}-01-01`);
+
+      const sales = await ProductRequest.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: start, $lt: end }, // ✅ Only this year's data
+          },
+        },
+        {
+          $group: {
+            _id: { $month: "$createdAt" },
+            totalSales: {
+              $sum: { $toDouble: "$total" },
+            },
+          },
+        },
+        {
+          $project: {
+            month: "$_id",
+            totalSales: 1,
+            _id: 0,
+          },
+        },
+        {
+          $sort: { month: 1 },
+        },
+      ]);
+
+      const fullData = Array.from({ length: 12 }, (_, i) => {
+        const month = i + 1;
+        const found = sales.find((s) => s.month === month);
+        return {
+          name: new Date(0, i).toLocaleString("default", { month: "short" }),
+          monthly: found ? found.totalSales : 0,
+        };
+      });
+
+      return response.ok(res, fullData);
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getTopSoldProduct: async (req, res) => {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      const products = await Product.find()
+        .sort({ sold_pieces: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+      return response.ok(res, products);
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+  getLowStockProduct: async (req, res) => {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+
+      const products = await Product.find({ pieces: { $lt: 20 } })
+        .sort({ pieces: 1 })
+        .limit(Number(limit))
+        .skip((page - 1) * limit);
+
+      return response.ok(res, products);
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
 };

@@ -9,7 +9,7 @@ const {
   updateProfile,
   changePasswordFOrAdmin
 } = require("@controllers/authController");
-const { contactUs, getAllContactUs ,updateStatus } = require("@controllers/contactUs");
+const { contactUs, getAllContactUs, updateStatus } = require("@controllers/contactUs");
 const { authenticate } = require("@middlewares/authMiddleware");
 const user = require("@controllers/user");
 const Blog = require("@controllers/blogController");
@@ -32,7 +32,7 @@ router.post("/auth/sendOTP", sendOTP);
 router.post("/auth/updateProfile", updateProfile);
 router.post("/auth/verifyOTP", verifyOTP);
 router.post("/auth/changePassword", changePassword);
-router.post("/auth/changePasswordForAdmin",authenticate, changePasswordFOrAdmin);
+router.post("/auth/changePasswordForAdmin", authenticate, changePasswordFOrAdmin);
 
 router.post("/user/fileupload", upload.single("file"), user.fileUpload);
 
@@ -105,7 +105,8 @@ router.post("/updateBrand", Brand.updateBrand);
 
 
 router.get("/getsetting", setting.getSetting);
-router.post("/createOrUpdateImage",authenticate,setting.createOrUpdateImage);
+router.post("/createOrUpdateImage", authenticate, setting.createOrUpdateImage);
+router.post("/createOrUpdateContactInfo", authenticate, setting.createOrUpdateContactInfo);
 
 router.get("/getInstaImage", instaImage.getInstaImage);
 router.post("/createOrUpdateInstaImage", authenticate, instaImage.createOrUpdateInstaImage);
@@ -149,6 +150,9 @@ router.post(
   authenticate,
   flashSaleController.deleteFlashSale
 );
-updateStatus
+router.get("/dashboarddetails", product.dashboarddetails);
+router.get("/getMonthlySales", product.getMonthlySales);
+router.get("/getTopSoldProduct", product.getTopSoldProduct);
+router.get("/getLowStockProduct", product.getLowStockProduct);
 
 module.exports = router;

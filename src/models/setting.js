@@ -15,11 +15,18 @@ const settingSchema = new mongoose.Schema(
         },
       },
     ],
+    Address: {
+      type: String,
+    },
+    MobileNo: {
+      type: String
+    }
   },
   {
     timestamps: true,
   }
 );
+
 settingSchema.set("toJSON", {
   getters: true,
   virtuals: false,
