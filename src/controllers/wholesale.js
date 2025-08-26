@@ -1,4 +1,4 @@
-const Wholesale = require('@models/Wholesale');
+const Wholesale = require('@models/wholesale');
 const response = require('../../responses');
 const mailNotification = require('./../services/mailNotification');
 
