@@ -797,4 +797,38 @@ module.exports = {
     }
   },
 
+  getProductByCatgeoryName: async (req, res) => {
+    try {
+
+      let categories = await Category.aggregate([
+        {
+          $lookup: {
+            from: "products", // collection ka naam (mongodb me lowercase + plural hota hai)
+            localField: "_id",
+            foreignField: "category",
+            as: "products"
+          }
+        },
+        {
+          $project: {
+            name: 1, // category name
+            products: 1
+          }
+        }
+      ])
+
+      return res.status(200).json({
+        status: true,
+        data: categories.map(cat => ({
+          categoryName: cat.name,
+          products: cat.products
+        })),
+      });
+
+    } catch (error) {
+      return res.status(500).json({ status: false, message: error.message });
+    }
+  }
+
+
 };

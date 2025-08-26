@@ -10,6 +10,7 @@ const {
   changePasswordFOrAdmin
 } = require("@controllers/authController");
 const { contactUs, getAllContactUs, updateStatus } = require("@controllers/contactUs");
+const { addWholesale,updateStatusForWholesale,getAllWholesale} = require("@controllers/wholesale");
 const { authenticate } = require("@middlewares/authMiddleware");
 const user = require("@controllers/user");
 const Blog = require("@controllers/blogController");
@@ -40,6 +41,10 @@ router.post("/contactUs", contactUs);
 router.post("/getContactUs", getAllContactUs);
 router.post("/updateStatus", updateStatus);
 
+router.post("/addWholesale", addWholesale);
+router.post("/getAllWholesale", getAllWholesale);
+router.post("/updateStatusForWholesale", updateStatusForWholesale);
+
 router.post("/add-subscriber", user.addNewsLetter);
 router.get("/get-subscriber", user.getNewsLetter);
 router.post("/del-subscriber", user.DeleteNewsLetter);
@@ -56,7 +61,7 @@ router.get("/getProductBythemeId/:id", product.getProductBythemeId);
 router.post("/createProductRequest", product.requestProduct);
 router.get("/getrequestProduct", authenticate, product.getrequestProduct);
 router.get("/getHistoryProduct", authenticate, product.getHistoryProduct);
-
+router.get("/getProductByCatgeoryName", product.getProductByCatgeoryName)
 router.get("/getColors", product.getColors);
 router.get("/getBrand", product.getBrand);
 

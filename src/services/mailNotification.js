@@ -132,6 +132,182 @@ module.exports = {
       console.error("Error sending delivery email:", err);
       throw new Error("Could not send delivery notification");
     }
+  },
+  wholesaleApplicationAdmin: async (WholesaleData) => {
+    try {
+      const wholesaleData = WholesaleData.WholesaleData;
+
+      const html = `
+    <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px;">
+      <div style="max-width: 650px; margin: auto; background: #fff; border-radius: 12px; padding: 30px; border: 1px solid #e5e5e5;">
+        
+        <h2 style="color: #c43b00; text-align: center; margin-bottom: 20px;">
+          New Wholesale Application Submitted
+        </h2>
+        
+        <p style="font-size: 15px; color: #333;">
+          A new wholesale application has been received. Please review the applicant’s details below:
+        </p>
+
+        <h3 style="margin-top: 25px; color: #c43b00; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
+          Applicant Information
+        </h3>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Full Name</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Company Name</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.companyName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Address</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.address}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">EIN</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.EIN}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">State Tax License</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.stateTaxLicense}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Phone Number</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.phoneNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Email</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Items of Interest</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(", ")}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 25px; padding: 15px; background: #fff1ef; border-left: 4px solid #c43b00; border-radius: 6px; font-size: 14px; color: #333;">
+          <strong>Action Required:</strong>
+          <ul style="margin: 8px 0 0 18px; padding: 0;">
+            <li>Log in to the <strong>Admin Dashboard</strong> to review this application.</li>
+            <li>Verify the provided documents and details.</li>
+            <li>Update the application status to <em>Under Review, Approved, or Rejected</em>.</li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 25px; font-size: 14px; color: #555;">
+          This is an automated notification. Please take necessary action at the earliest.
+        </p>
+
+        <p style="margin-top: 15px; font-weight: bold; color: #c43b00;">
+          Jasz & Co System Notification
+        </p>
+      </div>
+    </div>`;
+
+      return await sendMail(
+        "Rishabhtiwari73096@gmail.com",
+        `New Wholesale Application - ${wholesaleData?.companyName}`,
+        html
+      );
+    } catch (err) {
+      console.error("Error sending admin wholesale email:", err);
+      throw new Error("Could not send wholesale application notification to admin");
+    }
+  },
+  wholesaleApplicationReceived: async (WholesaleData, email) => {
+    try {
+      const wholesaleData = WholesaleData.WholesaleData;
+      const html = `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">
+      <div style="max-width: 650px; margin: auto; background: #fff; border-radius: 12px; padding: 30px; border: 1px solid #e5e5e5;">
+        
+        <h2 style="color: #127300; text-align: center; margin-bottom: 20px;">
+          Wholesale Application Received
+        </h2>
+        
+        <p style="font-size: 15px; color: #333;">Dear <strong>${wholesaleData?.name}</strong>,</p>
+        <p style="font-size: 15px; color: #333;">
+          Thank you for submitting your wholesale application. Our team will review the details provided and get back to you within 
+          <strong>3–5 business days</strong>.
+        </p>
+
+        <h3 style="margin-top: 25px; color: #127300; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
+          Application Details
+        </h3>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Full Name</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Company Name</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.companyName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Address</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.address}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">EIN</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.EIN}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">State Tax License</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.stateTaxLicense}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Phone Number</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.phoneNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Email</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Items of Interest</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(", ")}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 25px; padding: 15px; background: #e9f8ec; border-left: 4px solid #127300; border-radius: 6px; font-size: 14px; color: #333;">
+          <strong>Next Steps:</strong>
+          <ul style="margin: 8px 0 0 18px; padding: 0;">
+            <li>Our team will review your application carefully.</li>
+            <li>You may receive a call or email for verification if needed.</li>
+            <li>Once approved, we will share wholesale pricing and terms.</li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 25px; font-size: 14px; color: #555;">
+          Thank you for your interest in partnering with us.  
+          <br/>We look forward to building a successful business relationship.
+        </p>
+
+        <p style="margin-top: 15px; font-weight: bold; color: #127300;">
+          Jasz & Co Team
+        </p>
+      </div>
+    </div>`;
+
+      return await sendMail(
+        wholesaleData?.email,
+        `Wholesale Application Received - ${wholesaleData?.companyName}`,
+        html
+      );
+    } catch (err) {
+      console.error("Error sending wholesale email:", err);
+      throw new Error("Could not send wholesale application confirmation");
+    }
   }
+
+
 
 };
