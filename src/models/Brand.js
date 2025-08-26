@@ -1,25 +1,25 @@
-"use strict";
+'use strict';
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema(
   {
     name: {
-      type: String,
+      type: String
     },
     image: {
-      type: String,
+      type: String
     },
     slug: {
-      type: String,
+      type: String
     },
     popular: {
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-module.exports = mongoose.model("Brand", categorySchema);
+module.exports = mongoose.model('Brand', categorySchema);

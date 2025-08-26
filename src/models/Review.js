@@ -1,28 +1,26 @@
-"use strict";
+'use strict';
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const reviewSchema = new mongoose.Schema(
   {
     description: {
-      type: String,
+      type: String
     },
     posted_by: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User'
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      ref: 'Product'
     },
     rating: {
-      type: Number,
-    },
+      type: Number
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-
-
-module.exports = mongoose.model("Review", reviewSchema);
+module.exports = mongoose.model('Review', reviewSchema);

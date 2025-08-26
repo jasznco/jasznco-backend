@@ -1,14 +1,14 @@
 const User = require('@models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const response = require("../../responses");
+const response = require('../../responses');
 const Verification = require('@models/verification');
-const userHelper = require("../helper/user");
-const mailNotification = require("./../services/mailNotification");
+const userHelper = require('../helper/user');
+const mailNotification = require('./../services/mailNotification');
 
 module.exports = {
   register: async (req, res) => {
-    console.log("REQ BODY:", req.body);
+    console.log('REQ BODY:', req.body);
     try {
       const { name, email, password, phone } = req.body;
 
@@ -29,14 +29,14 @@ module.exports = {
         name,
         email,
         password: hashedPassword,
-        phone,
+        phone
       });
 
       await newUser.save();
 
       await mailNotification.welcomeMail({
         name: name,
-        email: email,
+        email: email
       });
 
       const userResponse = await User.findById(newUser._id).select('-password');
@@ -54,22 +54,32 @@ module.exports = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ status: false, message: 'Email and password are required' });
+        return res
+          .status(400)
+          .json({ status: false, message: 'Email and password are required' });
       }
 
       const user = await User.findOne({ email });
       if (!user) {
-        return res.status(401).json({ status: false, message: 'Invalid credentials' });
+        return res
+          .status(401)
+          .json({ status: false, message: 'Invalid credentials' });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res.status(401).json({ status: false, message: 'Invalid credentials' });
+        return res
+          .status(401)
+          .json({ status: false, message: 'Invalid credentials' });
       }
 
-      const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
-        expiresIn: '4h',
-      });
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: '4h'
+        }
+      );
 
       return res.json({
         status: true,
@@ -78,8 +88,8 @@ module.exports = {
           role: user.role, // ✅ Ensure user.type exists in your DB
           id: user._id,
           email: user.email,
-          name: user.name,
-        },
+          name: user.name
+        }
       });
     } catch (error) {
       console.error(error);
@@ -87,30 +97,33 @@ module.exports = {
     }
   },
 
-
   getUser: async (req, res) => {
     try {
       const { userId } = req.body;
 
       if (!userId) {
-        return res.status(400).json({ status: false, message: "User ID is required" });
+        return res
+          .status(400)
+          .json({ status: false, message: 'User ID is required' });
       }
 
-      const user = await User.findById(userId).select("-password");
+      const user = await User.findById(userId).select('-password');
 
       if (!user) {
-        return res.status(404).json({ status: false, message: "User not found" });
+        return res
+          .status(404)
+          .json({ status: false, message: 'User not found' });
       }
 
       res.status(200).json({
         status: true,
-        message: "User profile fetched successfully",
-        data: user,
+        message: 'User profile fetched successfully',
+        data: user
       });
     } catch (error) {
       res.status(500).json({
         status: false,
-        message: error.message || "Internal Server Error",
+        message: error.message || 'Internal Server Error'
       });
     }
   },
@@ -122,48 +135,50 @@ module.exports = {
       const user = await User.findOne({ email });
 
       if (!user) {
-        return response.badReq(res, { message: "Email does not exist." });
+        return response.badReq(res, { message: 'Email does not exist.' });
       }
 
-      const fullNameFromRequest = `${firstName} ${lastName}`.trim().toLowerCase();
+      const fullNameFromRequest = `${firstName} ${lastName}`
+        .trim()
+        .toLowerCase();
       const fullNameFromDB = user.name?.trim().toLowerCase();
-      console.log("fullNameFromRequest", fullNameFromRequest)
-      console.log("fullNameFromDB", fullNameFromDB)
+      console.log('fullNameFromRequest', fullNameFromRequest);
+      console.log('fullNameFromDB', fullNameFromDB);
       if (fullNameFromRequest !== fullNameFromDB) {
-        return response.badReq(res, { message: "Name and email do not match our records." });
+        return response.badReq(res, {
+          message: 'Name and email do not match our records.'
+        });
       }
 
       let ran_otp = Math.floor(1000 + Math.random() * 9000);
 
       await mailNotification.sendOTPmail({
         code: ran_otp,
-        email: email,
+        email: email
       });
 
       const ver = new Verification({
         email: email,
         user: user._id,
         otp: ran_otp,
-        expiration_at: userHelper.getDatewithAddedMinutes(5),
+        expiration_at: userHelper.getDatewithAddedMinutes(5)
       });
 
       await ver.save();
       const token = await userHelper.encode(ver._id);
 
-      return response.ok(res, { message: "OTP sent.", token });
-
+      return response.ok(res, { message: 'OTP sent.', token });
     } catch (error) {
       return response.error(res, error);
     }
   },
-
 
   verifyOTP: async (req, res) => {
     try {
       const otp = req.body.otp;
       const token = req.body.token;
       if (!(otp && token)) {
-        return response.badReq(res, { message: "OTP and token required." });
+        return response.badReq(res, { message: 'OTP and token required.' });
       }
       let verId = await userHelper.decode(token);
       let ver = await Verification.findById(verId);
@@ -173,13 +188,13 @@ module.exports = {
         new Date().getTime() < new Date(ver.expiration_at).getTime()
       ) {
         let token = await userHelper.encode(
-          ver._id + ":" + userHelper.getDatewithAddedMinutes(5).getTime()
+          ver._id + ':' + userHelper.getDatewithAddedMinutes(5).getTime()
         );
         ver.verified = true;
         await ver.save();
-        return response.ok(res, { message: "OTP verified", token });
+        return response.ok(res, { message: 'OTP verified', token });
       } else {
-        return response.notFound(res, { message: "Invalid OTP" });
+        return response.notFound(res, { message: 'Invalid OTP' });
       }
     } catch (error) {
       return response.error(res, error);
@@ -191,23 +206,23 @@ module.exports = {
       const token = req.body.token;
       const password = req.body.password;
       const data = await userHelper.decode(token);
-      const [verID, date] = data.split(":");
+      const [verID, date] = data.split(':');
       if (new Date().getTime() > new Date(date).getTime()) {
-        return response.forbidden(res, { message: "Session expired." });
+        return response.forbidden(res, { message: 'Session expired.' });
       }
       let otp = await Verification.findById(verID);
       if (!otp?.verified) {
-        return response?.forbidden(res, { message: "unAuthorize" });
+        return response?.forbidden(res, { message: 'unAuthorize' });
       }
       let user = await User.findById(otp.user);
       if (!user) {
-        return response.forbidden(res, { message: "unAuthorize" });
+        return response.forbidden(res, { message: 'unAuthorize' });
       }
       await Verification.findByIdAndDelete(verID);
       user.password = user.encryptPassword(password);
       await user.save();
       mailNotification.passwordChange({ email: user.email });
-      return response.ok(res, { message: "Password changed ! Login now." });
+      return response.ok(res, { message: 'Password changed ! Login now.' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -218,29 +233,33 @@ module.exports = {
       const { userId, ...updateData } = req.body;
 
       if (!userId) {
-        return res.status(400).json({ status: false, message: 'User ID is required' });
+        return res
+          .status(400)
+          .json({ status: false, message: 'User ID is required' });
       }
 
       const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
         new: true,
-        runValidators: true,
-      }).select("-password");
+        runValidators: true
+      }).select('-password');
 
       if (!updatedUser) {
-        return res.status(404).json({ status: false, message: 'User not found' });
+        return res
+          .status(404)
+          .json({ status: false, message: 'User not found' });
       }
 
       return res.status(200).json({
         status: true,
         message: 'Profile updated successfully',
-        data: updatedUser,
+        data: updatedUser
       });
     } catch (error) {
       console.error('Error updating profile:', error);
       return res.status(500).json({
         status: false,
         message: 'Internal server error',
-        error: error.message,
+        error: error.message
       });
     }
   },
@@ -248,26 +267,27 @@ module.exports = {
     try {
       const { password } = req.body;
       const userId = req.user.id;
-      console.log("User ID:", userId);
+      console.log('User ID:', userId);
 
       let user = await User.findById(userId);
-      console.log("User ID:", user);
+      console.log('User ID:', user);
 
       if (!user) {
-        return response.forbidden(res, { message: "User not found" });
+        return response.forbidden(res, { message: 'User not found' });
       }
 
-      if (user.role !== "Admin") {
-        return response.forbidden(res, { message: "Only admin can change password" });
+      if (user.role !== 'Admin') {
+        return response.forbidden(res, {
+          message: 'Only admin can change password'
+        });
       }
 
       user.password = user.encryptPassword(password);
       await user.save();
 
-      return response.ok(res, { message: "Password changed successfully" });
+      return response.ok(res, { message: 'Password changed successfully' });
     } catch (error) {
       return response.error(res, error);
     }
   }
-
 };

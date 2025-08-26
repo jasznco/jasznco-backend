@@ -1,56 +1,56 @@
-"use strict";
+'use strict';
 
-const mongoose = require("mongoose");
-const { object } = require("underscore");
+const mongoose = require('mongoose');
+const { object } = require('underscore');
 
 const flashSaleSchema = new mongoose.Schema(
   {
     startDateTime: {
       type: Date,
-      required: true,
+      required: true
     },
     endDateTime: {
       type: Date,
-      required: true,
+      required: true
     },
     price: {
       type: Number,
-      required: true,
+      required: true
     },
     availableQty: {
-      type: Number,
+      type: Number
     },
     offerPrice: {
-      type: Number,
+      type: Number
     },
     originalPrice: {
-      type: Number,
+      type: Number
     },
     attribute: {
-      type: object,
+      type: object
     },
     variant: {
       type: object
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
+      ref: 'Product',
+      required: true
     },
 
     status: {
       type: String,
-      enum: ["ACTIVE", "INACTIVE", "EXPIRED"],
-      default: "ACTIVE",
+      enum: ['ACTIVE', 'INACTIVE', 'EXPIRED'],
+      default: 'ACTIVE'
     },
 
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+      ref: 'User'
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
@@ -58,13 +58,13 @@ const flashSaleSchema = new mongoose.Schema(
 flashSaleSchema.index({ product: 1, status: 1 });
 flashSaleSchema.index({ endDateTime: 1 });
 
-flashSaleSchema.set("toJSON", {
+flashSaleSchema.set('toJSON', {
   getters: true,
   virtuals: false,
   transform: (doc, ret, options) => {
     delete ret.__v;
     return ret;
-  },
+  }
 });
 
-module.exports = mongoose.model("FlashSale", flashSaleSchema);
+module.exports = mongoose.model('FlashSale', flashSaleSchema);

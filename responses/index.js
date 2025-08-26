@@ -7,4 +7,13 @@ const conflict = require('./conflict');
 const notFound = require('./notFound');
 const badReq = require('./badReq');
 const forbidden = require('./forbidden');
-module.exports = { ok, forbidden, error, unAuthorize, created, badReq, notFound, conflict };
+module.exports = {
+  ok,
+  forbidden,
+  error,
+  unAuthorize,
+  created,
+  badReq,
+  notFound,
+  conflict
+};

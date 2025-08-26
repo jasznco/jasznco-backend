@@ -1,5 +1,5 @@
-const Content = require("@models/ContentManagment")
-const response = require("./../../responses");
+const Content = require('@models/ContentManagment');
+const response = require('./../../responses');
 
 exports.createContent = async (req, res) => {
   try {
@@ -15,23 +15,23 @@ exports.createContent = async (req, res) => {
       );
 
       return res.status(200).json({
-        message: "Content updated successfully",
-        data: updatedContent,
+        message: 'Content updated successfully',
+        data: updatedContent
       });
     }
 
     const newContent = new Content({
-      policy,
+      policy
     });
 
     await newContent.save();
     res.status(201).json({
-      message: "Content created successfully",
-      data: newContent,
+      message: 'Content created successfully',
+      data: newContent
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
@@ -41,18 +41,18 @@ exports.getContent = async (req, res) => {
     if (!content) {
       return res
         .status(404)
-        .json({ message: "Content not found. Please create content first." });
+        .json({ message: 'Content not found. Please create content first.' });
     }
     return response.ok(res, content);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
 exports.updateContent = async (req, res) => {
   try {
-    const { policy } = req.body;
+    const { policy, id } = req.body;
 
     const updatedContent = await Content.findByIdAndUpdate(
       id,
@@ -60,13 +60,13 @@ exports.updateContent = async (req, res) => {
       { new: true }
     );
     if (!updatedContent) {
-      return res.status(404).json({ message: "Content not found" });
+      return res.status(404).json({ message: 'Content not found' });
     }
     res
       .status(200)
-      .json({ message: "Content updated successfully", data: updatedContent });
+      .json({ message: 'Content updated successfully', data: updatedContent });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

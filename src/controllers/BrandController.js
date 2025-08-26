@@ -1,27 +1,27 @@
-"use strict";
+'use strict';
 
-const Brand = require("@models/Brand");
-const mongoose = require("mongoose");
-const response = require("../../responses");
+const Brand = require('@models/Brand');
+const mongoose = require('mongoose');
+const response = require('../../responses');
 
 module.exports = {
   createBrand: async (req, res) => {
     try {
-      const { name ,image} = req.body;
+      const { name, image } = req.body;
       if (!name) {
-        return res.status(400).json({ message: "Name is required" });
+        return res.status(400).json({ message: 'Name is required' });
       }
 
       const slug = name
         .toLowerCase()
-        .replace(/ /g, "-")
-        .replace(/[^\w-]+/g, "");
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
 
-      const Brands = new Brand({ name, slug ,image });
+      const Brands = new Brand({ name, slug, image });
       const savedBrand = await Brands.save();
 
       return response.ok(res, savedBrand, {
-        message: "Brand added successfully",
+        message: 'Brand added successfully'
       });
     } catch (error) {
       return response.error(res, error);
@@ -42,15 +42,15 @@ module.exports = {
       const { id } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ message: "Invalid Brand ID" });
+        return res.status(400).json({ message: 'Invalid Brand ID' });
       }
 
       const deletedBrand = await Brand.findByIdAndDelete(id);
       if (!deletedBrand) {
-        return res.status(404).json({ message: "Brand not found" });
+        return res.status(404).json({ message: 'Brand not found' });
       }
 
-      return response.ok(res, null, { message: "Brand deleted successfully" });
+      return response.ok(res, null, { message: 'Brand deleted successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -58,32 +58,32 @@ module.exports = {
 
   updateBrand: async (req, res) => {
     try {
-      const { name, _id ,image } = req.body;
+      const { name, _id, image } = req.body;
 
       if (!name) {
-        return res.status(400).json({ message: "Name is required" });
+        return res.status(400).json({ message: 'Name is required' });
       }
 
       const slug = name
         .toLowerCase()
-        .replace(/ /g, "-")
-        .replace(/[^\w-]+/g, "");
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
 
       const updatedBrand = await Brand.findByIdAndUpdate(
         _id,
-        { name, slug ,image},
+        { name, slug, image },
         { new: true }
       );
 
       if (!updatedBrand) {
-        return res.status(404).json({ message: "Brand not found" });
+        return res.status(404).json({ message: 'Brand not found' });
       }
 
       return response.ok(res, updatedBrand, {
-        message: "Brand updated successfully",
+        message: 'Brand updated successfully'
       });
     } catch (error) {
       return response.error(res, error);
     }
-  },
+  }
 };

@@ -6,9 +6,9 @@ module.exports = {
   verifyToken: (token) => {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      return decoded; 
+      return decoded;
     } catch (error) {
       throw new Error('Invalid token');
     }
-  },
+  }
 };

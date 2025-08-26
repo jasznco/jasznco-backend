@@ -1,39 +1,39 @@
-"use strict";
+'use strict';
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema(
   {
     carousel: [
       {
         image: {
-          type: String,
+          type: String
         },
         Category: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Category",
-        },
-      },
+          ref: 'Category'
+        }
+      }
     ],
     Address: {
-      type: String,
+      type: String
     },
     MobileNo: {
       type: String
     }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-settingSchema.set("toJSON", {
+settingSchema.set('toJSON', {
   getters: true,
   virtuals: false,
   transform: (doc, ret, options) => {
     delete ret.__v;
     return ret;
-  },
+  }
 });
 
-module.exports = mongoose.model("Setting", settingSchema);
+module.exports = mongoose.model('Setting', settingSchema);

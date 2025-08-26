@@ -1,7 +1,7 @@
-const User = require("@models/User");
-const response = require("../../responses");
-const Newsletter = require("@models/NewsLetter");
-const Review = require("@models/Review");
+const User = require('@models/User');
+const response = require('../../responses');
+const Newsletter = require('@models/NewsLetter');
+const Review = require('@models/Review');
 
 module.exports = {
   addNewsLetter: async (req, res) => {
@@ -10,12 +10,12 @@ module.exports = {
       const u = await Newsletter.find(payload);
       if (u.length > 0) {
         return response.conflict(res, {
-          message: "Email already exists.",
+          message: 'Email already exists.'
         });
       } else {
         let news = new Newsletter(payload);
         const newsl = await news.save();
-        return response.ok(res, { message: "Subscribed successfully" });
+        return response.ok(res, { message: 'Subscribed successfully' });
       }
     } catch (error) {
       return response.error(res, error);
@@ -34,7 +34,7 @@ module.exports = {
   DeleteNewsLetter: async (req, res) => {
     try {
       let news = await Newsletter.findByIdAndDelete(req.body.id);
-      return response.ok(res, { message: "Deleted successfully" });
+      return response.ok(res, { message: 'Deleted successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -46,7 +46,7 @@ module.exports = {
       let payload = req.body;
       const re = await Review.findOne({
         product: payload.product,
-        posted_by: req.user.id,
+        posted_by: req.user.id
       });
       console.log(re);
       if (re) {
@@ -59,7 +59,7 @@ module.exports = {
         await u.save();
       }
 
-      return response.ok(res, { message: "successfully" });
+      return response.ok(res, { message: 'successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -79,7 +79,7 @@ module.exports = {
 
         cond.createdAt = {
           $gte: date,
-          $lt: nextDay,
+          $lt: nextDay
         };
       }
 
@@ -88,7 +88,7 @@ module.exports = {
       const skip = (page - 1) * limit;
 
       const allreview = await Review.find(cond)
-        .populate("product posted_by")
+        .populate('product posted_by')
         .skip(skip)
         .sort({ createdAt: -1 })
         .limit(limit);
@@ -101,12 +101,12 @@ module.exports = {
         data: allreview,
         page,
         totalReviews,
-        totalPages: Math.ceil(totalReviews / limit),
+        totalPages: Math.ceil(totalReviews / limit)
       });
     } catch (e) {
       res.status(500).json({
         success: false,
-        message: e.message,
+        message: e.message
       });
     }
   },
@@ -119,10 +119,10 @@ module.exports = {
       console.log(Re);
 
       if (!Re) {
-        return response.notFound(res, { message: "Not Found" });
+        return response.notFound(res, { message: 'Not Found' });
       }
 
-      return response.ok(res, { message: "Review deleted successfully" });
+      return response.ok(res, { message: 'Review deleted successfully' });
     } catch (error) {
       console.log(error);
       return response.error(res, error);
@@ -131,13 +131,13 @@ module.exports = {
   fileUpload: async (req, res) => {
     try {
       if (!req.file) {
-        return response.badRequest(res, { message: "No file uploaded." });
+        return response.badRequest(res, { message: 'No file uploaded.' });
       }
       console.log(req.file);
       return response.ok(res, {
-        message: "File uploaded successfully.",
+        message: 'File uploaded successfully.',
         fileUrl: req.file.path, // Cloudinary file URL
-        fileName: req.file.filename, // public ID
+        fileName: req.file.filename // public ID
       });
     } catch (error) {
       return response.error(res, error);
@@ -182,11 +182,11 @@ module.exports = {
 
       return res.status(200).json({
         status: true,
-        data: users,
+        data: users
         // pagination,
       });
     } catch (error) {
       return response.error(res, error);
     }
-  },
+  }
 };

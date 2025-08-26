@@ -1,5 +1,6 @@
-module.exports = (res,info) => {
-    return res.status(409).send({
-        'status': false, data: info
-    });
+module.exports = (res, info) => {
+  return res.status(409).send({
+    status: false,
+    data: info
+  });
 };

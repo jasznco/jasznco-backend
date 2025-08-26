@@ -1,22 +1,22 @@
-const mongoose = require("mongoose");
-const Product = require("@models/product");
-const ProductRequest = require("@models/product-request");
+const mongoose = require('mongoose');
+const Product = require('@models/product');
+const ProductRequest = require('@models/product-request');
 const ContactUs = require('@models/contactUs');
-const User = mongoose.model("User");
-const { DateTime } = require("luxon"); // still can be kept if needed elsewhere
-const Category = mongoose.model("Category");
-const response = require("./../../responses");
-const Favourite = require("@models/Favorite");
-const _ = require("underscore");
-const Review = require("@models/Review");
-const { getReview } = require("../helper/user");
-const mailNotification = require("./../services/mailNotification");
+const User = mongoose.model('User');
+const { DateTime } = require('luxon'); // still can be kept if needed elsewhere
+const Category = mongoose.model('Category');
+const response = require('./../../responses');
+const Favourite = require('@models/Favorite');
+const _ = require('lodash');
+const Review = require('@models/Review');
+const { getReview } = require('../helper/user');
+const mailNotification = require('./../services/mailNotification');
 
 const cleanAndUnique = (data) => {
   return _.uniq(
     data
-      .map((item) => item.trim()) // Trim spaces and convert to lowercase
-      .filter((item) => item !== "") // Remove empty or space-only values
+      .map((item) => item.trim().toLowerCase()) // trim + lowercase
+      .filter((item) => item !== '') // remove empty
   );
 };
 
@@ -29,87 +29,87 @@ module.exports = {
           .toString()
           .toLowerCase()
           .trim()
-          .replace(/[\s\W-]+/g, "-")
-          .replace(/^-+|-+$/g, "");
+          .replace(/[\s\W-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
 
         slug = `${slug}-abc`;
 
         return slug;
       };
-      payload.slug = generateSlug(payload.name || "");
+      payload.slug = generateSlug(payload.name || '');
 
       const existingProduct = await Product.findOne({
         name: payload.name,
         categoryName: payload.categoryName,
-        subCategoryName: payload.subCategoryName,
+        subCategoryName: payload.subCategoryName
       });
 
       if (existingProduct) {
         return res.status(400).json({
           status: false,
           message:
-            "Product with the same name in this category/subcategory already exists",
+            'Product with the same name in this category/subcategory already exists'
         });
       }
 
       const newProduct = new Product(payload);
       await newProduct.save();
 
-      return response.ok(res, { message: "Product added successfully" });
+      return response.ok(res, { message: 'Product added successfully' });
     } catch (error) {
       return response.error(res, error);
     }
   },
 
-  getProductFromLocalApi: async (req, res) => {
-    try {
-      const headers = {
-        Accept: "application/xml",
-      };
-      if (req.body.token) {
-        headers.Authorization = req.body.token;
-      }
-      const response = await fetch(req.body.url, {
-        method: "get",
-        mode: "cors",
-        headers: {
-          "Accept-language": "pl\r\n",
-          Accept: "application/xml",
-          Authorization: "Token 38f6d786d20352799f07c00310fc94679d5479ea\r\n",
-        },
-      });
+  // getProductFromLocalApi: async (req, res) => {
+  //   try {
+  //     const headers = {
+  //       Accept: 'application/xml'
+  //     };
+  //     if (req.body.token) {
+  //       headers.Authorization = req.body.token;
+  //     }
+  //     const response = await fetch(req.body.url, {
+  //       method: 'get',
+  //       mode: 'cors',
+  //       headers: {
+  //         'Accept-language': 'pl\r\n',
+  //         Accept: 'application/xml',
+  //         Authorization: 'Token 38f6d786d20352799f07c00310fc94679d5479ea\r\n'
+  //       }
+  //     });
 
-      if (!response.ok) {
-        // Handle non-200 responses
-        return res
-          .status(response.status)
-          .json({ error: `Error fetching data: ${response.statusText}` });
-      }
+  //     if (!response.ok) {
+  //       // Handle non-200 responses
+  //       return res
+  //         .status(response.status)
+  //         .json({ error: `Error fetching data: ${response.statusText}` });
+  //     }
 
-      const xmlData = await response.text();
-      const jsonData = await parseStringPromise(xmlData);
+  //     const xmlData = await response.text();
+  //     const jsonData = await parseStringPromise(xmlData);
 
-      // Send the parsed JSON data
-      return res.status(200).json({
-        success: true,
-        data: jsonData,
-      });
-    } catch (error) {
-      // Catch and handle any errors
-      console.error("Error:", error);
-      return res.status(500).json({
-        success: false,
-        error: "Internal Server Error",
-      });
-    }
-  },
+  //     // Send the parsed JSON data
+  //     return res.status(200).json({
+  //       success: true,
+  //       data: jsonData
+  //     });
+  //   } catch (error) {
+  //     // Catch and handle any errors
+  //     console.error('Error:', error);
+  //     return res.status(500).json({
+  //       success: false,
+  //       error: 'Internal Server Error'
+  //     });
+  //   }
+  // },
 
   createManyProduct: async (req, res) => {
     try {
       const payload = req?.body || {};
       let cat = await Product.insertMany(payload);
       // await cat.save();
-      return response.ok(res, { message: "Product added successfully" });
+      return response.ok(res, { message: 'Product added successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -122,7 +122,7 @@ module.exports = {
       let skip = (page - 1) * limit;
 
       let product = await Product.find()
-        .populate("category")
+        .populate('category')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -137,8 +137,8 @@ module.exports = {
           totalItems: totalProducts,
           totalPages: totalPages,
           currentPage: page,
-          itemsPerPage: limit,
-        },
+          itemsPerPage: limit
+        }
       });
     } catch (error) {
       return response.error(res, error);
@@ -148,19 +148,19 @@ module.exports = {
   getProductBySlug: async (req, res) => {
     try {
       const product = await Product.findOne({
-        slug: req?.query?.slug,
-      }).populate("category");
+        slug: req?.query?.slug
+      }).populate('category');
 
       let reviews = await Review.find({ product: product._id }).populate(
-        "posted_by",
-        "name"
+        'posted_by',
+        'name'
       );
 
       const favourite = req.query.user
         ? await Favourite.findOne({
-          product: product._id,
-          user: req.query.user,
-        })
+            product: product._id,
+            user: req.query.user
+          })
         : null;
 
       const productObj = product.toObject();
@@ -169,7 +169,7 @@ module.exports = {
         ...productObj,
         rating: await getReview(product._id),
         reviews: reviews,
-        favourite: !!favourite,
+        favourite: !!favourite
       };
 
       return response.ok(res, d);
@@ -181,11 +181,11 @@ module.exports = {
   getProductById: async (req, res) => {
     try {
       const product = await Product.findOne({ _id: req.params.id }).populate(
-        "category Brand"
+        'category Brand'
       );
 
       if (!product) {
-        return response.error(res, "Product not found");
+        return response.error(res, 'Product not found');
       }
 
       return response.ok(res, product);
@@ -199,15 +199,14 @@ module.exports = {
     try {
       let cond = {};
 
-      if (req.query.Category && req.query.Category !== "All Category") {
+      if (req.query.Category && req.query.Category !== 'All Category') {
         cond.categoryName = { $in: [req.query.Category] };
       }
 
-
-      if (req.query["Subcategory[]"]) {
-        const subcategories = Array.isArray(req.query["Subcategory[]"])
-          ? req.query["Subcategory[]"]
-          : [req.query["Subcategory[]"]];
+      if (req.query['Subcategory[]']) {
+        const subcategories = Array.isArray(req.query['Subcategory[]'])
+          ? req.query['Subcategory[]']
+          : [req.query['Subcategory[]']];
 
         cond.subCategoryName = { $in: subcategories };
       }
@@ -225,12 +224,12 @@ module.exports = {
       if (req.query.colors) {
         const colors = Array.isArray(req.query.colors)
           ? req.query.colors
-          : req.query.colors.split(",");
+          : req.query.colors.split(',');
 
         cond.varients = {
           $elemMatch: {
-            color: { $in: colors },
-          },
+            color: { $in: colors }
+          }
         };
       }
 
@@ -238,13 +237,13 @@ module.exports = {
         const min = parseFloat(req.query.minPrice);
         const max = parseFloat(req.query.maxPrice);
 
-        cond["price_slot"] = {
+        cond['price_slot'] = {
           $elemMatch: {
             Offerprice: {
               $gte: min,
-              $lte: max,
-            },
-          },
+              $lte: max
+            }
+          }
         };
       }
 
@@ -253,7 +252,7 @@ module.exports = {
       let skip = (req.query.page - 1) * req.query.limit;
 
       const product = await Product.find(cond)
-        .populate("category")
+        .populate('category')
         .skip(skip)
         .sort({ createdAt: -1 })
         .limit(parseInt(req.query.limit));
@@ -271,7 +270,7 @@ module.exports = {
     console.log(req.query);
     try {
       let cond = {
-        theme: { $in: [req?.params?.id] },
+        theme: { $in: [req?.params?.id] }
       };
       let sort_by = {};
       if (req.query.is_top) {
@@ -292,32 +291,32 @@ module.exports = {
       if (req.query.colors && req.query.colors.length > 0) {
         cond.varients = {
           $ne: [],
-          $elemMatch: { color: { $in: req.query.colors } },
+          $elemMatch: { color: { $in: req.query.colors } }
         };
       }
 
       if (req.query.sort_by) {
-        if (req.query.sort_by === "featured" || req.query.sort_by === "new") {
+        if (req.query.sort_by === 'featured' || req.query.sort_by === 'new') {
           sort_by.createdAt = -1;
         }
 
-        if (req.query.sort_by === "old") {
+        if (req.query.sort_by === 'old') {
           sort_by.createdAt = 1;
         }
 
-        if (req.query.sort_by === "a_z") {
+        if (req.query.sort_by === 'a_z') {
           sort_by.name = 1;
         }
 
-        if (req.query.sort_by === "z_a") {
+        if (req.query.sort_by === 'z_a') {
           sort_by.name = -1;
         }
 
-        if (req.query.sort_by === "low") {
+        if (req.query.sort_by === 'low') {
           sort_by.price = 1;
         }
 
-        if (req.query.sort_by === "high") {
+        if (req.query.sort_by === 'high') {
           sort_by.price = -1;
         }
       } else {
@@ -329,14 +328,14 @@ module.exports = {
       if (req.query.page) {
         let skip = (req.query.page - 1) * req.query.limit;
         product = await Product.find(cond)
-          .populate("theme brand")
+          .populate('theme brand')
           .sort(sort_by)
           .skip(skip)
           .limit(req.query.limit);
         d = await Product.countDocuments(cond);
       } else {
         product = await Product.find(cond)
-          .populate("theme brand")
+          .populate('theme brand')
           .sort(sort_by)
           .limit(8);
       }
@@ -349,19 +348,19 @@ module.exports = {
   getColors: async (req, res) => {
     try {
       let product = await Product.aggregate([
-        { $unwind: "$varients" },
+        { $unwind: '$varients' },
         {
           $group: {
             _id: null, // We don't need to group by a specific field, so use null
-            uniqueColors: { $addToSet: "$varients.color" }, // $addToSet ensures uniqueness
-          },
+            uniqueColors: { $addToSet: '$varients.color' } // $addToSet ensures uniqueness
+          }
         },
         {
           $project: {
             _id: 0, // Exclude _id from the output
-            uniqueColors: 1,
-          },
-        },
+            uniqueColors: 1
+          }
+        }
       ]);
       const d = cleanAndUnique(product[0].uniqueColors);
       return response.ok(res, { uniqueColors: d });
@@ -374,15 +373,15 @@ module.exports = {
       const product = await Product.aggregate([
         {
           $group: {
-            _id: "$brandName",
-          },
+            _id: '$brandName'
+          }
         },
         {
           $project: {
             _id: 0,
-            brandName: "$_id",
-          },
-        },
+            brandName: '$_id'
+          }
+        }
       ]);
 
       // Optional: remove duplicates if needed (though $group already handles it)
@@ -396,7 +395,7 @@ module.exports = {
   getProductbycategory: async (req, res) => {
     try {
       let product = await Product.find({ category: req.params.id }).populate(
-        "category"
+        'category'
       );
       return response.ok(res, product);
     } catch (error) {
@@ -409,7 +408,7 @@ module.exports = {
       const payload = req?.body || {};
       let product = await Product.findByIdAndUpdate(payload?.id, payload, {
         new: true,
-        upsert: true,
+        upsert: true
       });
       return response.ok(res, product);
     } catch (error) {
@@ -421,9 +420,9 @@ module.exports = {
     try {
       let cond = {
         $or: [
-          { name: { $regex: req.query.key, $options: "i" } },
-          { brandName: { $regex: req.query.key, $options: "i" } },
-        ],
+          { name: { $regex: req.query.key, $options: 'i' } },
+          { brandName: { $regex: req.query.key, $options: 'i' } }
+        ]
       };
       const product = await Product.find(cond).sort({ createdAt: -1 });
       return response.ok(res, product);
@@ -435,7 +434,7 @@ module.exports = {
   topselling: async (req, res) => {
     try {
       let product = await Product.find({ is_top: true }).sort({
-        updatedAt: -1,
+        updatedAt: -1
       });
       return response.ok(res, product);
     } catch (error) {
@@ -446,7 +445,7 @@ module.exports = {
   getnewitem: async (req, res) => {
     try {
       let product = await Product.find({ is_new: true }).sort({
-        updatedAt: -1,
+        updatedAt: -1
       });
       return response.ok(res, product);
     } catch (error) {
@@ -457,7 +456,7 @@ module.exports = {
   deleteProduct: async (req, res) => {
     try {
       await Product.findByIdAndDelete(req?.params?.id);
-      return response.ok(res, { meaasge: "Deleted successfully" });
+      return response.ok(res, { meaasge: 'Deleted successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -469,7 +468,7 @@ module.exports = {
         (f) => new mongoose.Types.ObjectId(f)
       );
       await Product.deleteMany({ _id: { $in: newid } });
-      return response.ok(res, { meaasge: "Deleted successfully" });
+      return response.ok(res, { meaasge: 'Deleted successfully' });
     } catch (error) {
       return response.error(res, error);
     }
@@ -478,7 +477,7 @@ module.exports = {
   requestProduct: async (req, res) => {
     try {
       const payload = req?.body || {};
-      const storePrefix = "JASZ";
+      const storePrefix = 'JASZ';
 
       const lastOrder = await ProductRequest.findOne()
         .sort({ createdAt: -1 })
@@ -486,8 +485,8 @@ module.exports = {
 
       let orderNumber = 1;
 
-      const centralTime = DateTime.now().setZone("America/Chicago");
-      const datePart = centralTime.toFormat("yyLLdd"); // e.g., 240612
+      const centralTime = DateTime.now().setZone('America/Chicago');
+      const datePart = centralTime.toFormat('yyLLdd'); // e.g., 240612
 
       if (lastOrder && lastOrder.orderId) {
         const match = lastOrder.orderId.match(/-(\d{2})$/);
@@ -496,7 +495,7 @@ module.exports = {
         }
       }
 
-      const orderPart = String(orderNumber).padStart(2, "0");
+      const orderPart = String(orderNumber).padStart(2, '0');
       const generatedOrderId = `${storePrefix}-${datePart}-${orderPart}`;
 
       payload.orderId = generatedOrderId;
@@ -521,16 +520,13 @@ module.exports = {
             const updatedSelected = variant.selected.map((sel) => {
               return {
                 ...sel,
-                qty: Math.max(
-                  Number(sel.qty) - quantityToReduce,
-                  0
-                ).toString(),
+                qty: Math.max(Number(sel.qty) - quantityToReduce, 0).toString()
               };
             });
-            console.log("updatedSelected", updatedSelected);
+            console.log('updatedSelected', updatedSelected);
             return {
               ...variant,
-              selected: updatedSelected,
+              selected: updatedSelected
             };
           });
 
@@ -540,8 +536,8 @@ module.exports = {
               variants: updatedVariants,
               $inc: {
                 sold_pieces: quantityToReduce,
-                pieces: -quantityToReduce,
-              },
+                pieces: -quantityToReduce
+              }
             },
             { new: true }
           );
@@ -550,18 +546,18 @@ module.exports = {
 
       await mailNotification.orderDelivered({
         email: req?.body?.Email,
-        orderId: newOrder.orderId,
+        orderId: newOrder.orderId
       });
 
-      const user = await User.findById(payload.user);  // user document milega
-      console.log("User shipping address before:", user.shippingAddress);
+      const user = await User.findById(payload.user); // user document milega
+      console.log('User shipping address before:', user.shippingAddress);
       user.shippingAddress = payload.ShippingAddress; // update field
       await user.save();
-      console.log("User shipping address updated:", user.shippingAddress);
+      console.log('User shipping address updated:', user.shippingAddress);
 
       return response.ok(res, {
-        message: "Product request added successfully",
-        orders: newOrder,
+        message: 'Product request added successfully',
+        orders: newOrder
       });
     } catch (error) {
       return response.error(res, error);
@@ -574,7 +570,7 @@ module.exports = {
       console.log(req.user?.id);
       console.log(req.user?._id);
       const product = await ProductRequest.find({ user: req.user?.id })
-        .populate("productDetail.product user", "-password -varients")
+        .populate('productDetail.product user', '-password -varients')
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ createdAt: -1 });
@@ -590,9 +586,9 @@ module.exports = {
       const { page = 1, limit = 20 } = req.query;
       const product = await ProductRequest.find({
         user: req.user?.id,
-        status: "Completed",
+        status: 'Completed'
       })
-        .populate("productDetail.product user", "-password -varients")
+        .populate('productDetail.product user', '-password -varients')
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ createdAt: -1 });
@@ -602,8 +598,6 @@ module.exports = {
       return response.error(res, error);
     }
   },
-
-
 
   updaterequestProduct: async (req, res) => {
     try {
@@ -632,7 +626,7 @@ module.exports = {
       if (req.body.orderId) {
         const orderId = req.body.orderId.trim();
         if (orderId.length > 0) {
-          cond.orderId = { $regex: orderId, $options: "i" };
+          cond.orderId = { $regex: orderId, $options: 'i' };
         }
       }
 
@@ -641,8 +635,8 @@ module.exports = {
       const skip = (page - 1) * limit;
 
       const products = await ProductRequest.find(cond)
-        .populate("user", "-password -varients")
-        .populate("productDetail.product")
+        .populate('user', '-password -varients')
+        .populate('productDetail.product')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -653,20 +647,20 @@ module.exports = {
         status: true,
         data: products.map((item, index) => ({
           ...(item.toObject?.() || item),
-          indexNo: skip + index + 1,
+          indexNo: skip + index + 1
         })),
         pagination: {
           totalItems,
           totalPages: Math.ceil(totalItems / limit),
           currentPage: page,
-          itemsPerPage: limit,
-        },
+          itemsPerPage: limit
+        }
       });
     } catch (error) {
-      console.error("Error in getOrderBySeller:", error);
+      console.error('Error in getOrderBySeller:', error);
       return res.status(500).json({
         status: false,
-        message: error.message || "An error occurred",
+        message: error.message || 'An error occurred'
       });
     }
   },
@@ -674,9 +668,9 @@ module.exports = {
   getrequestProductbyid: async (req, res) => {
     try {
       const product = await ProductRequest.findById(req.params.id)
-        .populate("user", "-password")
-        .populate("category")
-        .populate("productDetail.product");
+        .populate('user', '-password')
+        .populate('category')
+        .populate('productDetail.product');
       return response.ok(res, product);
     } catch (error) {
       return response.error(res, error);
@@ -686,7 +680,7 @@ module.exports = {
   getrequestProductbyuser: async (req, res) => {
     try {
       const product = await ProductRequest.find({ user: req.user.id })
-        .populate("category product")
+        .populate('category product')
         .sort({ createdAt: -1 });
       return response.ok(res, product);
     } catch (error) {
@@ -704,14 +698,14 @@ module.exports = {
       });
 
       const allCategories = await Category.countDocuments();
-      const totalUsers = await User.countDocuments({ role: "User" });
+      const totalUsers = await User.countDocuments({ role: 'User' });
       const totalFeedbacks = await ContactUs.countDocuments();
 
       const details = {
         totalTransactionAmount: totalAmount.toFixed(2),
         totalCategories: allCategories,
         totalUsers: totalUsers,
-        totalFeedbacks: totalFeedbacks,
+        totalFeedbacks: totalFeedbacks
       };
 
       return response.ok(res, details);
@@ -723,7 +717,7 @@ module.exports = {
     const year = parseInt(req.query.year);
 
     if (!year || isNaN(year)) {
-      return res.status(400).json({ success: false, message: "Invalid year" });
+      return res.status(400).json({ success: false, message: 'Invalid year' });
     }
 
     try {
@@ -733,35 +727,35 @@ module.exports = {
       const sales = await ProductRequest.aggregate([
         {
           $match: {
-            createdAt: { $gte: start, $lt: end }, // ✅ Only this year's data
-          },
+            createdAt: { $gte: start, $lt: end } // ✅ Only this year's data
+          }
         },
         {
           $group: {
-            _id: { $month: "$createdAt" },
+            _id: { $month: '$createdAt' },
             totalSales: {
-              $sum: { $toDouble: "$total" },
-            },
-          },
+              $sum: { $toDouble: '$total' }
+            }
+          }
         },
         {
           $project: {
-            month: "$_id",
+            month: '$_id',
             totalSales: 1,
-            _id: 0,
-          },
+            _id: 0
+          }
         },
         {
-          $sort: { month: 1 },
-        },
+          $sort: { month: 1 }
+        }
       ]);
 
       const fullData = Array.from({ length: 12 }, (_, i) => {
         const month = i + 1;
         const found = sales.find((s) => s.month === month);
         return {
-          name: new Date(0, i).toLocaleString("default", { month: "short" }),
-          monthly: found ? found.totalSales : 0,
+          name: new Date(0, i).toLocaleString('default', { month: 'short' }),
+          monthly: found ? found.totalSales : 0
         };
       });
 
@@ -799,14 +793,13 @@ module.exports = {
 
   getProductByCatgeoryName: async (req, res) => {
     try {
-
       let categories = await Category.aggregate([
         {
           $lookup: {
-            from: "products", // collection ka naam (mongodb me lowercase + plural hota hai)
-            localField: "_id",
-            foreignField: "category",
-            as: "products"
+            from: 'products', // collection ka naam (mongodb me lowercase + plural hota hai)
+            localField: '_id',
+            foreignField: 'category',
+            as: 'products'
           }
         },
         {
@@ -815,20 +808,17 @@ module.exports = {
             products: 1
           }
         }
-      ])
+      ]);
 
       return res.status(200).json({
         status: true,
-        data: categories.map(cat => ({
+        data: categories.map((cat) => ({
           categoryName: cat.name,
           products: cat.products
-        })),
+        }))
       });
-
     } catch (error) {
       return res.status(500).json({ status: false, message: error.message });
     }
   }
-
-
 };

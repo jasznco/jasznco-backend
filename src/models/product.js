@@ -1,70 +1,70 @@
-"use strict";
+'use strict';
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const productchema = new mongoose.Schema(
   {
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: 'Category'
     },
     categoryName: {
-      type: String,
+      type: String
     },
     subCategoryName: {
-      type: String,
+      type: String
     },
     subcategory: {
       _id: mongoose.Schema.Types.ObjectId,
-      name: String,
+      name: String
     },
     slug: {
-      type: String,
+      type: String
     },
     brandName: {
-      type: String,
+      type: String
     },
     Brand: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Brand",
+      ref: 'Brand'
     },
     name: {
-      type: String,
+      type: String
     },
     gender: {
-      type: String,
+      type: String
     },
     image: {
-      type: String,
+      type: String
     },
     short_description: {
-      type: String,
+      type: String
     },
     long_description: {
-      type: String,
+      type: String
     },
     price: {
-      type: Number,
+      type: Number
     },
 
     pieces: {
-      type: Number,
+      type: Number
     },
     sold_pieces: {
       type: Number,
-      default: 0,
+      default: 0
     },
     varients: {
-      type: [],
+      type: []
     },
     parameter_type: {
-      type: String,
+      type: String
     },
     Attribute: [],
-    price_slot: [],
+    price_slot: []
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-module.exports = mongoose.model("Product", productchema);
+module.exports = mongoose.model('Product', productchema);

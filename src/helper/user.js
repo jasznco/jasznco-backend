@@ -1,8 +1,8 @@
-"use strict";
-const mongoose = require("mongoose");
-const User = mongoose.model("User");
-const { scrypt, createDecipheriv, createCipheriv } = require("crypto");
-const Review = require("@models/Review");
+'use strict';
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+const { scrypt, createDecipheriv, createCipheriv } = require('crypto');
+const Review = require('@models/Review');
 
 module.exports = {
   deleteUser: (condition) => {
@@ -16,24 +16,24 @@ module.exports = {
   },
   encode: (data) => {
     return new Promise((resolve, reject) => {
-      scrypt(process.env.JWT_SECRET, "salt", 24, (err, key) => {
+      scrypt(process.env.JWT_SECRET, 'salt', 24, (err, key) => {
         if (err) return reject(err);
         const iv = Buffer.alloc(16, 0);
-        const cipher = createCipheriv("aes-192-cbc", key, iv);
-        let encrypted = cipher.update("" + data, "utf8", "hex");
-        encrypted += cipher.final("hex");
+        const cipher = createCipheriv('aes-192-cbc', key, iv);
+        let encrypted = cipher.update('' + data, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
         return resolve(encrypted);
       });
     });
   },
   decode: (hash) => {
     return new Promise((resolve, reject) => {
-      scrypt(process.env.JWT_SECRET, "salt", 24, (err, key) => {
+      scrypt(process.env.JWT_SECRET, 'salt', 24, (err, key) => {
         if (err) return reject(err);
         const iv = Buffer.alloc(16, 0);
-        const decipher = createDecipheriv("aes-192-cbc", key, iv);
-        let decrypted = decipher.update(hash, "hex", "utf8");
-        decrypted += decipher.final("utf8");
+        const decipher = createDecipheriv('aes-192-cbc', key, iv);
+        let decrypted = decipher.update(hash, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
         return resolve(decrypted);
       });
     });
@@ -49,5 +49,5 @@ module.exports = {
       0
     );
     return packageReview.length ? pt / packageReview.length : 0;
-  },
+  }
 };
