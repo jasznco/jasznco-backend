@@ -20,6 +20,12 @@ const settingSchema = new mongoose.Schema(
     },
     MobileNo: {
       type: String
+    },
+     ApiSecretKey: {
+      type: String
+    },
+    ApiPrivateKey: {
+      type: String
     }
   },
   {

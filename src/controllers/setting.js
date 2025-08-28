@@ -68,5 +68,31 @@ module.exports = {
         message: e.message
       });
     }
+  },
+  createOrUpdateShippingKeyInfo: async (req, res) => {
+    try {
+      const { ApiSecretKey, ApiPrivateKey } = req.body;
+      const setting = await Setting.findOneAndUpdate(
+        {},
+        {
+          $set: {
+            ...(ApiSecretKey !== undefined && { ApiSecretKey }),
+            ...(ApiPrivateKey !== undefined && { ApiPrivateKey })
+          }
+        },
+        { new: true, upsert: true }
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: 'Shipping Api Key updated successfully!',
+        data: setting
+      });
+    } catch (e) {
+      return res.status(500).json({
+        success: false,
+        message: e.message
+      });
+    }
   }
 };

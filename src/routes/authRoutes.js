@@ -123,7 +123,11 @@ router.post(
   authenticate,
   setting.createOrUpdateContactInfo
 );
-
+router.post(
+  '/createOrUpdateShippingKeyInfo',
+  authenticate,
+  setting.createOrUpdateShippingKeyInfo
+);
 router.get('/getInstaImage', instaImage.getInstaImage);
 router.post(
   '/createOrUpdateInstaImage',

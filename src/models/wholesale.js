@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { unique } = require('underscore');
 
 const wholesaleSchema = new mongoose.Schema(
   {
@@ -35,6 +36,7 @@ const wholesaleSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,   
       match: [/.+@.+\..+/, 'Please fill a valid email address']
     },
     itemsOfInterest: {

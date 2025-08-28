@@ -158,9 +158,9 @@ module.exports = {
 
       const favourite = req.query.user
         ? await Favourite.findOne({
-            product: product._id,
-            user: req.query.user
-          })
+          product: product._id,
+          user: req.query.user
+        })
         : null;
 
       const productObj = product.toObject();
@@ -233,19 +233,18 @@ module.exports = {
         };
       }
 
-      if (req.query.minPrice && req.query.maxPrice) {
-        const min = parseFloat(req.query.minPrice);
-        const max = parseFloat(req.query.maxPrice);
-
-        cond['price_slot'] = {
-          $elemMatch: {
-            Offerprice: {
-              $gte: min,
-              $lte: max
-            }
-          }
-        };
-      }
+      // if (minPrice && maxPrice) {
+      //   cond['varients.selected'] = {
+      //     $elemMatch: {
+      //       $expr: {
+      //         $and: [
+      //           { $gte: [{ $toDouble: "$offerprice" }, parseFloat(minPrice)] },
+      //           { $lte: [{ $toDouble: "$offerprice" }, parseFloat(maxPrice)] }
+      //         ]
+      //       }
+      //     }
+      //   };
+      // }
 
       console.log(cond);
 
@@ -790,35 +789,83 @@ module.exports = {
       return response.error(res, error);
     }
   },
-
   getProductByCatgeoryName: async (req, res) => {
     try {
-      let categories = await Category.aggregate([
-        {
-          $lookup: {
-            from: 'products', // collection ka naam (mongodb me lowercase + plural hota hai)
-            localField: '_id',
-            foreignField: 'category',
-            as: 'products'
+      const { brand, colors, minPrice, maxPrice } = req.query;
+
+      let cond = {};
+
+      if (brand) {
+        cond.brandName = brand;
+      }
+
+      if (colors) {
+        const colorArray = Array.isArray(colors) ? colors : colors.split(',');
+        cond.varients = { $elemMatch: { color: { $in: colorArray } } };
+      }
+
+      const categories = await Category.find();
+
+      const result = await Promise.all(
+        categories.map(async (cat) => {
+          // Aggregation pipeline
+          let pipeline = [
+            { $match: { ...cond, category: cat._id } }
+          ];
+
+          if (minPrice && maxPrice) {
+            pipeline.push(
+              {
+                $addFields: {
+                  filteredVariants: {
+                    $filter: {
+                      input: "$varients.selected",
+                      as: "v",
+                      cond: {
+                        $and: [
+                          {
+                            $gte: [
+                              { $convert: { input: "$$v.offerprice", to: "double", onError: 0, onNull: 0 } },
+                              parseFloat(minPrice)
+                            ]
+                          },
+                          {
+                            $lte: [
+                              { $convert: { input: "$$v.offerprice", to: "double", onError: 0, onNull: 0 } },
+                              parseFloat(maxPrice)
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              { $match: { filteredVariants: { $ne: [] } } }
+            );
+
           }
-        },
-        {
-          $project: {
-            name: 1, // category name
-            products: 1
-          }
-        }
-      ]);
+
+          const products = await Product.aggregate(pipeline);
+
+          return {
+            categoryName: cat.name,
+            products
+          };
+        })
+      );
 
       return res.status(200).json({
         status: true,
-        data: categories.map((cat) => ({
-          categoryName: cat.name,
-          products: cat.products
-        }))
+        data: result
       });
+
     } catch (error) {
+      console.error(error);
       return res.status(500).json({ status: false, message: error.message });
     }
   }
-};
+
+
+
+}
