@@ -233,18 +233,16 @@ module.exports = {
         };
       }
 
-      // if (minPrice && maxPrice) {
-      //   cond['varients.selected'] = {
-      //     $elemMatch: {
-      //       $expr: {
-      //         $and: [
-      //           { $gte: [{ $toDouble: "$offerprice" }, parseFloat(minPrice)] },
-      //           { $lte: [{ $toDouble: "$offerprice" }, parseFloat(maxPrice)] }
-      //         ]
-      //       }
-      //     }
-      //   };
-      // }
+      if (req.query.minPrice && req.query.maxPrice) {
+        cond["varients.selected"] = {
+          $elemMatch: {
+            offerprice: {
+              $gte: parseFloat(req.query.minPrice),
+              $lte: parseFloat(req.query.maxPrice)
+            }
+          }
+        };
+      }
 
       console.log(cond);
 
@@ -801,52 +799,30 @@ module.exports = {
 
       if (colors) {
         const colorArray = Array.isArray(colors) ? colors : colors.split(',');
-        cond.varients = { $elemMatch: { color: { $in: colorArray } } };
+        cond["varients.color"] = { $in: colorArray };
       }
 
+      if (minPrice && maxPrice) {
+        cond["varients.selected"] = {
+          $elemMatch: {
+            offerprice: {
+              $gte: parseFloat(minPrice),
+              $lte: parseFloat(maxPrice)
+            }
+          }
+        };
+      }
+
+
+      // get all categories
       const categories = await Category.find();
 
       const result = await Promise.all(
         categories.map(async (cat) => {
-          // Aggregation pipeline
-          let pipeline = [
-            { $match: { ...cond, category: cat._id } }
-          ];
-
-          if (minPrice && maxPrice) {
-            pipeline.push(
-              {
-                $addFields: {
-                  filteredVariants: {
-                    $filter: {
-                      input: "$varients.selected",
-                      as: "v",
-                      cond: {
-                        $and: [
-                          {
-                            $gte: [
-                              { $convert: { input: "$$v.offerprice", to: "double", onError: 0, onNull: 0 } },
-                              parseFloat(minPrice)
-                            ]
-                          },
-                          {
-                            $lte: [
-                              { $convert: { input: "$$v.offerprice", to: "double", onError: 0, onNull: 0 } },
-                              parseFloat(maxPrice)
-                            ]
-                          }
-                        ]
-                      }
-                    }
-                  }
-                }
-              },
-              { $match: { filteredVariants: { $ne: [] } } }
-            );
-
-          }
-
-          const products = await Product.aggregate(pipeline);
+          const products = await Product.find({
+            ...cond,
+            category: cat._id
+          });
 
           return {
             categoryName: cat.name,
@@ -859,13 +835,10 @@ module.exports = {
         status: true,
         data: result
       });
-
     } catch (error) {
       console.error(error);
       return res.status(500).json({ status: false, message: error.message });
     }
   }
 
-
-
-}
+};

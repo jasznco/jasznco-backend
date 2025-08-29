@@ -21,7 +21,7 @@ const settingSchema = new mongoose.Schema(
     MobileNo: {
       type: String
     },
-     ApiSecretKey: {
+    ApiSecretKey: {
       type: String
     },
     ApiPrivateKey: {
