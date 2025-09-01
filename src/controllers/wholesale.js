@@ -5,12 +5,20 @@ const mailNotification = require('./../services/mailNotification');
 module.exports = {
   addWholesale: async (req, res) => {
     try {
+      const { email } = req.body;
+
+      const existingWholesale = await Wholesale.findOne({ email });
+
+      if (existingWholesale) {
+        return response.error(res, { message: "A request with this email already exists. Please wait until it is fulfilled" });
+      }
+
       const newWholesale = new Wholesale(req.body);
       await newWholesale.save();
 
       await mailNotification.wholesaleApplicationReceived({
         WholesaleData: req.body,
-        email: req.body?.email
+        email
       });
 
       await mailNotification.wholesaleApplicationAdmin({
@@ -18,12 +26,15 @@ module.exports = {
       });
 
       return response.ok(res, {
-        message: 'Wholesale request submitted successfully'
+        status: true,
+        message: "Wholesale request submitted successfully"
       });
+
     } catch (error) {
       return response.error(res, error);
     }
   },
+
 
   getAllWholesale: async (req, res) => {
     try {
@@ -40,6 +51,10 @@ module.exports = {
       if (req.body.name) {
         const name = req.body.name.substring(0, 3);
         cond.name = { $regex: '^' + name, $options: 'i' };
+      }
+      if (req.body.companyName) {
+        const name = req.body.companyName.substring(0, 3);
+        cond.companyName = { $regex: '^' + name, $options: 'i' };
       }
 
       if (req.body.email) {

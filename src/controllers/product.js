@@ -158,9 +158,9 @@ module.exports = {
 
       const favourite = req.query.user
         ? await Favourite.findOne({
-          product: product._id,
-          user: req.query.user
-        })
+            product: product._id,
+            user: req.query.user
+          })
         : null;
 
       const productObj = product.toObject();
@@ -234,7 +234,7 @@ module.exports = {
       }
 
       if (req.query.minPrice && req.query.maxPrice) {
-        cond["varients.selected"] = {
+        cond['varients.selected'] = {
           $elemMatch: {
             offerprice: {
               $gte: parseFloat(req.query.minPrice),
@@ -799,11 +799,11 @@ module.exports = {
 
       if (colors) {
         const colorArray = Array.isArray(colors) ? colors : colors.split(',');
-        cond["varients.color"] = { $in: colorArray };
+        cond['varients.color'] = { $in: colorArray };
       }
 
       if (minPrice && maxPrice) {
-        cond["varients.selected"] = {
+        cond['varients.selected'] = {
           $elemMatch: {
             offerprice: {
               $gte: parseFloat(minPrice),
@@ -812,7 +812,6 @@ module.exports = {
           }
         };
       }
-
 
       // get all categories
       const categories = await Category.find();
@@ -840,5 +839,4 @@ module.exports = {
       return res.status(500).json({ status: false, message: error.message });
     }
   }
-
 };
