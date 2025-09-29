@@ -158,9 +158,9 @@ module.exports = {
 
       const favourite = req.query.user
         ? await Favourite.findOne({
-            product: product._id,
-            user: req.query.user
-          })
+          product: product._id,
+          user: req.query.user
+        })
         : null;
 
       const productObj = product.toObject();
@@ -813,7 +813,7 @@ module.exports = {
         };
       }
 
-      // get all categories
+
       const categories = await Category.find();
 
       const result = await Promise.all(
@@ -821,7 +821,7 @@ module.exports = {
           const products = await Product.find({
             ...cond,
             category: cat._id
-          });
+          }).sort({ createdAt: -1 }); 
 
           return {
             categoryName: cat.name,
