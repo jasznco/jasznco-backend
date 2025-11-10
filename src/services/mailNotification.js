@@ -311,5 +311,58 @@ module.exports = {
       console.error('Error sending wholesale email:', err);
       throw new Error('Could not send wholesale application confirmation');
     }
-  }
+  },
+  signupOTP: async ({ email, otp }) => {
+    try {
+      const html = `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+      <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 30px; border: 1px solid #ddd;">
+        <h2 style="color: #127300;">Verify Your Email Address</h2>
+        <p>Hello,</p>
+        <p>Thank you for signing up with <strong>Jasz & Co</strong>! Please verify your email address by using the OTP below:</p>
+
+        <div style="background-color: #e9f8ec; padding: 20px; text-align: center; border-radius: 8px; border: 1px solid #127300;">
+          <h1 style="color: #127300; font-size: 32px; letter-spacing: 4px; margin: 0;">${otp}</h1>
+        </div>
+
+        <p style="margin-top: 20px;">This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone for security reasons.</p>
+        <p style="margin-top: 25px;">Welcome to the Jasz & Co family!</p>
+        <p><strong style="color: #127300;">– Jasz & Co Team</strong></p>
+      </div>
+    </div>`;
+
+      return await sendMail(email, 'Verify Your Email - Jasz & Co', html);
+    } catch (err) {
+      console.error('Error sending signup OTP email:', err);
+      throw new Error('Could not send signup OTP email');
+    }
+  },
+  loginOTP: async ({ email, otp }) => {
+    try {
+      const html = `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+      <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 30px; border: 1px solid #ddd;">
+        <h2 style="color: #127300;">Login Verification Required</h2>
+        <p>Hello,</p>
+        <p>We received a login request for your <strong>Jasz & Co</strong> account. Please verify it using the OTP below:</p>
+
+        <div style="background-color: #e9f8ec; padding: 20px; text-align: center; border-radius: 8px; border: 1px solid #127300;">
+          <h1 style="color: #127300; font-size: 32px; letter-spacing: 4px; margin: 0;">${otp}</h1>
+        </div>
+
+        <p style="margin-top: 20px;">This OTP is valid for <strong>10 minutes</strong>.</p>
+        <p>If this login was not initiated by you, please change your password immediately to secure your account.</p>
+
+        <p style="margin-top: 25px;">Stay secure,<br /><strong style="color: #127300;">Jasz & Co Team</strong></p>
+      </div>
+    </div>`;
+
+      return await sendMail(email, 'Login Verification - Jasz & Co', html);
+    } catch (err) {
+      console.error('Error sending login OTP email:', err);
+      throw new Error('Could not send login OTP email');
+    }
+  },
+
+
 };

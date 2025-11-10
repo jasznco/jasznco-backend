@@ -4,9 +4,13 @@ const {
   register,
   getUser,
   sendOTP,
+  sendOtp,
+  verifyOtp,
   verifyOTP,
   changePassword,
   updateProfile,
+  sendLoginOtp,
+  loginWithOTP,
   changePasswordFOrAdmin
 } = require('@controllers/authController');
 const {
@@ -32,6 +36,10 @@ const instaImage = require('@controllers/instaImage');
 const router = express.Router();
 router.post('/auth/login', login);
 router.post('/auth/register', register);
+router.post('/auth/send-otp', sendOtp);
+router.post('/auth/verify-otp', verifyOtp);
+router.post('/auth/send-login-otp', sendLoginOtp);
+router.post('/auth/verify-login-otp', loginWithOTP);
 router.post('/auth/profile', authenticate, getUser);
 router.post('/auth/sendOTP', sendOTP);
 router.post('/auth/updateProfile', updateProfile);

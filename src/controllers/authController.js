@@ -5,6 +5,7 @@ const response = require('../../responses');
 const Verification = require('@models/verification');
 const userHelper = require('../helper/user');
 const mailNotification = require('./../services/mailNotification');
+const otpStore = new Map(); // Temporary in-memory OTP storage
 
 module.exports = {
   register: async (req, res) => {
@@ -49,6 +50,167 @@ module.exports = {
       res.status(500).json({ message: 'Server error' });
     }
   },
+  
+  sendOtp: async (req, res) => {
+    try {
+      const { name, email, password, phone } = req.body;
+
+      if (!email || !password || !name || !phone)
+        return res.status(400).json({ message: 'All fields are required' });
+
+      if (password.length < 6)
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+
+      const existingUser = await User.findOne({ email });
+      if (existingUser)
+        return res.status(400).json({ message: 'User already exists' });
+
+      const otp = Math.floor(1000 + Math.random() * 9000);
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await Verification.deleteMany({ email }); // remove old OTPs if any
+
+      const ver = new Verification({
+        email,
+        name,
+        phone,
+        password: hashedPassword,
+        otp,
+        expiration_at: new Date(Date.now() + 5 * 60 * 1000) // 5 mins
+      });
+
+      await ver.save();
+
+      await mailNotification.signupOTP({ email, otp });
+
+      return res.status(200).json({ message: 'OTP sent successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
+  verifyOtp: async (req, res) => {
+    try {
+      const { email, otp } = req.body;
+
+      const ver = await Verification.findOne({ email });
+      if (!ver)
+        return res.status(400).json({ message: 'OTP not found or expired' });
+
+      if (ver.expiration_at < Date.now())
+        return res.status(400).json({ message: 'OTP expired' });
+
+      if (ver.otp !== otp)
+        return res.status(400).json({ message: 'Invalid OTP' });
+
+      const newUser = new User({
+        name: ver.name,
+        email: ver.email,
+        phone: ver.phone,
+        password: ver.password
+      });
+
+      await newUser.save();
+
+      await mailNotification.welcomeMail({
+        name: newUser.name,
+        email: newUser.email
+      });
+
+      await Verification.deleteOne({ email }); // cleanup
+
+      const userResponse = await User.findById(newUser._id).select('-password');
+
+      res.status(201).json({
+        message: 'User registered successfully',
+        user: userResponse
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
+  sendLoginOtp: async (req, res) => {
+    try {
+      const { email } = req.body;
+      const otp = Math.floor(1000 + Math.random() * 9000);
+
+      await Verification.deleteMany({ email });
+
+      const ver = new Verification({
+        email,
+        otp,
+        expiration_at: new Date(Date.now() + 5 * 60 * 1000) // 5 mins
+      });
+
+      await ver.save();
+      await mailNotification.loginOTP({ email, otp });
+
+      return res.status(200).json({ message: 'OTP sent successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
+  loginWithOTP: async (req, res) => {
+    try {
+      const { email, password, otp } = req.body;
+
+      const ver = await Verification.findOne({ email });
+      if (!ver)
+        return res.status(400).json({ message: 'OTP not found or expired' });
+
+      if (ver.expiration_at < Date.now())
+        return res.status(400).json({ message: 'OTP expired' });
+
+      if (ver.otp !== otp)
+        return res.status(400).json({ message: 'Invalid OTP' });
+
+      if (!email || !password) {
+        return res
+          .status(400)
+          .json({ status: false, message: 'Email and password are required' });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res
+          .status(401)
+          .json({ status: false, message: 'Invalid credentials' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res
+          .status(401)
+          .json({ status: false, message: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: '4h'
+        }
+      );
+      await Verification.deleteOne({ email }); // cleanup
+
+      return res.json({
+        status: true,
+        data: {
+          token,
+          role: user.role, // ✅ Ensure user.type exists in your DB
+          id: user._id,
+          email: user.email,
+          name: user.name
+        }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ status: false, message: 'Server error' });
+    }
+  },
+
   login: async (req, res) => {
     try {
       const { email, password } = req.body;

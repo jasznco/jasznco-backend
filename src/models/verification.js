@@ -9,6 +9,14 @@ const verificationSchema = new mongoose.Schema(
     expiration_at: {
       type: Date
     },
+    email: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    name: String,
+    password: String,
     otp: {
       type: String
     },
