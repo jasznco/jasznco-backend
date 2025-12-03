@@ -1,11 +1,11 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS
-  }
+    pass: process.env.MAIL_PASS,
+  },
 });
 
 const sendMail = async (to, subject, html) => {
@@ -14,7 +14,7 @@ const sendMail = async (to, subject, html) => {
       from: `Jasz & Co <${process.env.MAIL_USER}>`,
       to,
       subject,
-      html
+      html,
     };
     transporter.sendMail(mailConfigurations, function (error, info) {
       if (error) return reject(error);
@@ -26,7 +26,7 @@ const sendMail = async (to, subject, html) => {
 module.exports = {
   welcomeMail: async (user) => {
     try {
-      console.log('Sending welcome email to:', user.email);
+      console.log("Sending welcome email to:", user.email);
 
       const html = `
       <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -56,10 +56,10 @@ module.exports = {
         </div>
       </div>`;
 
-      await sendMail(user.email, 'Welcome to Jasz & Co!', html);
+      await sendMail(user.email, "Welcome to Jasz & Co!", html);
     } catch (err) {
-      console.error('Error sending welcome email:', err);
-      throw new Error('Failed to send welcome email');
+      console.error("Error sending welcome email:", err);
+      throw new Error("Failed to send welcome email");
     }
   },
 
@@ -77,10 +77,10 @@ module.exports = {
         </div>
       </div>`;
 
-      return await sendMail(email, 'Your OTP Code - Jasz & Co', html);
+      return await sendMail(email, "Your OTP Code - Jasz & Co", html);
     } catch (err) {
       console.error(err);
-      throw new Error('Could not send OTP mail');
+      throw new Error("Could not send OTP mail");
     }
   },
 
@@ -99,11 +99,11 @@ module.exports = {
 
       return await sendMail(
         email,
-        'Password Change Notification - Jasz & Co',
+        "Password Change Notification - Jasz & Co",
         html
       );
     } catch (err) {
-      throw new Error('Could not send password change mail');
+      throw new Error("Could not send password change mail");
     }
   },
 
@@ -132,8 +132,8 @@ module.exports = {
 
       return await sendMail(email, `Order Delivered - ID: ${orderId}`, html);
     } catch (err) {
-      console.error('Error sending delivery email:', err);
-      throw new Error('Could not send delivery notification');
+      console.error("Error sending delivery email:", err);
+      throw new Error("Could not send delivery notification");
     }
   },
   wholesaleApplicationAdmin: async (WholesaleData) => {
@@ -188,7 +188,7 @@ module.exports = {
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #fff6f4;">Items of Interest</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(', ')}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(", ")}</td>
             </tr>
           </tbody>
         </table>
@@ -213,14 +213,14 @@ module.exports = {
     </div>`;
 
       return await sendMail(
-        'Rishabhtiwari73096@gmail.com',
+        "jasznco@gmail.com",
         `New Wholesale Application - ${wholesaleData?.companyName}`,
         html
       );
     } catch (err) {
-      console.error('Error sending admin wholesale email:', err);
+      console.error("Error sending admin wholesale email:", err);
       throw new Error(
-        'Could not send wholesale application notification to admin'
+        "Could not send wholesale application notification to admin"
       );
     }
   },
@@ -277,7 +277,7 @@ module.exports = {
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9;">Items of Interest</td>
-              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(', ')}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${wholesaleData?.itemsOfInterest?.join(", ")}</td>
             </tr>
           </tbody>
         </table>
@@ -308,8 +308,8 @@ module.exports = {
         html
       );
     } catch (err) {
-      console.error('Error sending wholesale email:', err);
-      throw new Error('Could not send wholesale application confirmation');
+      console.error("Error sending wholesale email:", err);
+      throw new Error("Could not send wholesale application confirmation");
     }
   },
   signupOTP: async ({ email, otp }) => {
@@ -331,10 +331,10 @@ module.exports = {
       </div>
     </div>`;
 
-      return await sendMail(email, 'Verify Your Email - Jasz & Co', html);
+      return await sendMail(email, "Verify Your Email - Jasz & Co", html);
     } catch (err) {
-      console.error('Error sending signup OTP email:', err);
-      throw new Error('Could not send signup OTP email');
+      console.error("Error sending signup OTP email:", err);
+      throw new Error("Could not send signup OTP email");
     }
   },
   loginOTP: async ({ email, otp }) => {
@@ -357,12 +357,10 @@ module.exports = {
       </div>
     </div>`;
 
-      return await sendMail(email, 'Login Verification - Jasz & Co', html);
+      return await sendMail(email, "Login Verification - Jasz & Co", html);
     } catch (err) {
-      console.error('Error sending login OTP email:', err);
-      throw new Error('Could not send login OTP email');
+      console.error("Error sending login OTP email:", err);
+      throw new Error("Could not send login OTP email");
     }
   },
-
-
 };
