@@ -1,7 +1,9 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtpout.secureserver.net",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
@@ -16,9 +18,10 @@ const sendMail = async (to, subject, html) => {
       subject,
       html,
     };
-    transporter.sendMail(mailConfigurations, function (error, info) {
+
+    transporter.sendMail(mailConfigurations, (error, info) => {
       if (error) return reject(error);
-      return resolve(info);
+      resolve(info);
     });
   });
 };
@@ -213,7 +216,7 @@ module.exports = {
     </div>`;
 
       return await sendMail(
-        "jasznco@gmail.com",
+        "customerservice@jasznco.com",
         `New Wholesale Application - ${wholesaleData?.companyName}`,
         html
       );
