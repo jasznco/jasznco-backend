@@ -1,16 +1,16 @@
-'use strict';
+"use strict";
 
-const mongoose = require('mongoose');
-const { object } = require('underscore');
+const mongoose = require("mongoose");
+const { object } = require("underscore");
 
 const pointSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['Point']
+    enum: ["Point"],
   },
   coordinates: {
-    type: [Number]
-  }
+    type: [Number],
+  },
 });
 
 const productrequestchema = new mongoose.Schema(
@@ -19,84 +19,89 @@ const productrequestchema = new mongoose.Schema(
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Product'
+          ref: "Product",
         },
         image: [
           {
-            type: String
-          }
+            type: String,
+          },
         ],
         total: {
-          type: Number
+          type: Number,
         },
         color: {
-          type: String
+          type: String,
         },
         size: {
-          type: String
+          type: String,
         },
         attribute: {
-          type: object
+          type: object,
         },
         qty: {
-          type: Number
+          type: Number,
         },
         price: {
-          type: Number
-        }
-      }
+          type: Number,
+        },
+      },
     ],
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: "User",
     },
     status: {
       type: String,
       enum: [
-        'Pending',
-        'Completed',
-        'Return',
-        'Cancel',
-        'Shipped',
-        'Return Requested'
+        "Pending",
+        "Completed",
+        "Return",
+        "Cancel",
+        "Shipped",
+        "Return Requested",
       ],
-      default: 'Pending'
+      default: "Pending",
     },
     orderId: {
       type: String,
-      unique: true
+      unique: true,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category'
+      ref: "Category",
     },
     seller_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: "User",
     },
     total: {
-      type: String
+      type: String,
     },
     ShippingAddress: {
-      type: Object
+      type: Object,
     },
     location: {
-      type: pointSchema
-    }
+      type: pointSchema,
+    },
+    PaymentStatus: {
+      type: String,
+      enum: ["Paid", "UnPaid", "Pending"],
+      default: "Pending",
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
-productrequestchema.set('toJSON', {
+productrequestchema.set("toJSON", {
   getters: true,
   virtuals: false,
   transform: (doc, ret, options) => {
     delete ret.__v;
     return ret;
-  }
+  },
 });
-productrequestchema.index({ location: '2dsphere' });
+productrequestchema.index({ location: "2dsphere" });
 
-module.exports = mongoose.model('ProductRequest', productrequestchema);
+module.exports = mongoose.model("ProductRequest", productrequestchema);

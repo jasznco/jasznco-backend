@@ -187,4 +187,7 @@ router.get('/getMonthlySales', product.getMonthlySales);
 router.get('/getTopSoldProduct', product.getTopSoldProduct);
 router.get('/getLowStockProduct', product.getLowStockProduct);
 
+router.get('/downloadProductsExcel',product.downloadProductsExcel);
+router.get('/downloadOrderExcel',product.downloadOrderExcel);
+
 module.exports = router;
