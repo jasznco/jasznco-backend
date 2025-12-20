@@ -839,9 +839,29 @@ module.exports = {
       return res.status(500).json({ status: false, message: error.message });
     }
   },
+
   downloadProductsExcel: async (req, res) => {
     try {
-      const products = await Product.find().lean();
+      const { startDate, endDate } = req.body;
+
+      if (!startDate || !endDate) {
+        return res
+          .status(400)
+          .json({ message: "Start date and end date required" });
+      }
+
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      const products = await Product.find({
+        createdAt: {
+          $gte: start,
+          $lte: end,
+        },
+      }).lean();
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Products");
@@ -903,7 +923,26 @@ module.exports = {
 
   downloadOrderExcel: async (req, res) => {
     try {
-      const products = await ProductRequest.find().lean();
+      const { startDate, endDate } = req.body;
+
+      if (!startDate || !endDate) {
+        return res
+          .status(400)
+          .json({ message: "Start date and end date required" });
+      }
+
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      const products = await ProductRequest.find({
+        createdAt: {
+          $gte: start,
+          $lte: end,
+        },
+      }).lean();
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Products");
@@ -969,6 +1008,127 @@ module.exports = {
     } catch (err) {
       console.error("Excel export error:", err);
       res.status(500).json({ message: "Failed to generate Excel file" });
+    }
+  },
+
+  downloadSalesReports: async (req, res) => {
+    try {
+      const { startDate, endDate } = req.body;
+
+      if (!startDate || !endDate) {
+        return res
+          .status(400)
+          .json({ message: "Start date and end date required" });
+      }
+
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      const products = await Product.find().lean();
+
+      const orders = await ProductRequest.find({
+        createdAt: { $gte: start, $lte: end },
+      }).lean();
+
+      const salesMap = {};
+
+      orders.forEach((order) => {
+        order.productDetail?.forEach((item) => {
+          const pid = item.product?.toString();
+          if (!pid) return;
+
+          if (!salesMap[pid]) {
+            salesMap[pid] = { sold: 0, returned: 0 };
+          }
+
+          salesMap[pid].sold += Number(item.sold_pieces || 0);
+          salesMap[pid].returned += Number(item.returnedQuantity || 0);
+        });
+      });
+
+      // 4️⃣ Excel setup
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Sales Report");
+
+      worksheet.columns = [
+        { header: "Product Name", key: "name", width: 25 },
+        { header: "Quantity Purchased", key: "purchased", width: 22 },
+        { header: "Quantity Sold", key: "sold", width: 18 },
+        { header: "Unit Price", key: "price", width: 15 },
+        { header: "Total Purchase", key: "totalPurchase", width: 18 },
+        { header: "Inventory Balance", key: "balance", width: 20 },
+        { header: "Quantity Returned", key: "returned", width: 22 },
+        { header: "Quantity Available", key: "available", width: 22 },
+        { header: "Total Inventory Cost", key: "inventoryCost", width: 25 },
+      ];
+
+      // 5️⃣ Populate rows
+      products.forEach((product) => {
+        const sale = salesMap[product._id.toString()] || {
+          sold: 0,
+          returned: 0,
+        };
+
+        const unitPrice = Number(
+          product?.varients?.[0]?.selected?.[0]?.offerprice || 0
+        );
+
+        const stockPieces = Number(product.pieces || 0);
+        const sold = Number(sale.sold || 0);
+        const returned = Number(sale.returned || 0);
+        const purchased = stockPieces + sold;
+        const available = stockPieces + returned;
+        const balance = purchased - sold;
+
+        const totalPurchase = purchased * unitPrice;
+        const inventoryCost = available * unitPrice;
+
+        worksheet.addRow({
+          name: product.name,
+          purchased,
+          sold,
+          price: `$ ${unitPrice.toFixed(2)}`,
+          totalPurchase: `$ ${totalPurchase.toFixed(2)}`,
+          balance,
+          returned,
+          available,
+          inventoryCost: `$ ${inventoryCost.toFixed(2)}`,
+        });
+      });
+
+      // 6️⃣ Header styling
+      const header = worksheet.getRow(1);
+      header.font = { bold: true };
+      header.alignment = { horizontal: "center", vertical: "middle" };
+
+      worksheet.eachRow((row, rowNumber) => {
+        row.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+        if (rowNumber > 1) row.alignment = { vertical: "middle" };
+      });
+
+      // 7️⃣ Send Excel
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=sales-report.xlsx"
+      );
+
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      console.error("Sales report error:", error);
+      res.status(500).json({ message: "Failed to generate sales report" });
     }
   },
 };

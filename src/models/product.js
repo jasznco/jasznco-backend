@@ -53,6 +53,10 @@ const productchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    returnedQuantity: {
+      type: Number,
+      default: 0
+    },
     varients: {
       type: []
     },
