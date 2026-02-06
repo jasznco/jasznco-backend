@@ -50,10 +50,20 @@ const productrequestchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    easyship_shipment_id: {
+      type: String,
+      unique: true,
+    },
+    courier_id: {
+      type: String,
+    },
+    tracking_number: { type: String },
+    label_url: { type: String },
     status: {
       type: String,
       enum: [
         "Pending",
+        "Processing",
         "Completed",
         "Return",
         "Cancel",
@@ -77,6 +87,12 @@ const productrequestchema = new mongoose.Schema(
     total: {
       type: String,
     },
+    subtotal: {
+      type: Number,
+    },
+    shippingCost: {
+      type: Number,
+    },
     ShippingAddress: {
       type: Object,
     },
@@ -91,7 +107,7 @@ const productrequestchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 productrequestchema.set("toJSON", {

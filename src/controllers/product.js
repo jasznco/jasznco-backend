@@ -12,14 +12,25 @@ const Review = require("@models/Review");
 const { getReview } = require("../helper/user");
 const mailNotification = require("./../services/mailNotification");
 const ExcelJS = require("exceljs");
+const axios = require("axios");
 
 const cleanAndUnique = (data) => {
   return _.uniq(
     data
       .map((item) => item.trim().toLowerCase()) // trim + lowercase
-      .filter((item) => item !== "") // remove empty
+      .filter((item) => item !== ""), // remove empty
   );
 };
+const EASYSHIP_API_URL = process.env.EASYSHIP_API_URL;
+const EASYSHIP_TOKEN = process.env.EASYSHIP_TOKEN;
+
+const getHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${EASYSHIP_TOKEN}`,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});
 
 module.exports = {
   createProduct: async (req, res) => {
@@ -154,7 +165,7 @@ module.exports = {
 
       let reviews = await Review.find({ product: product._id }).populate(
         "posted_by",
-        "name"
+        "name",
       );
 
       const favourite = req.query.user
@@ -182,7 +193,7 @@ module.exports = {
   getProductById: async (req, res) => {
     try {
       const product = await Product.findOne({ _id: req.params.id }).populate(
-        "category Brand"
+        "category Brand",
       );
 
       if (!product) {
@@ -393,7 +404,7 @@ module.exports = {
   getProductbycategory: async (req, res) => {
     try {
       let product = await Product.find({ category: req.params.id }).populate(
-        "category"
+        "category",
       );
       return response.ok(res, product);
     } catch (error) {
@@ -463,7 +474,7 @@ module.exports = {
   deleteAllProduct: async (req, res) => {
     try {
       const newid = req.body.products.map(
-        (f) => new mongoose.Types.ObjectId(f)
+        (f) => new mongoose.Types.ObjectId(f),
       );
       await Product.deleteMany({ _id: { $in: newid } });
       return response.ok(res, { meaasge: "Deleted successfully" });
@@ -474,90 +485,159 @@ module.exports = {
 
   requestProduct: async (req, res) => {
     try {
-      const payload = req?.body || {};
+      const {
+        destination_address,
+        courier_service_id,
+        parcels,
+        productDetail,
+        user,
+        ShippingAddress,
+        Email,
+        shippingCost,
+      } = req.body;
+
+      if (
+        !destination_address ||
+        !courier_service_id ||
+        !parcels ||
+        !productDetail?.length ||
+        !user
+      ) {
+        return res.status(400).json({ message: "Required fields missing" });
+      }
+
       const storePrefix = "JASZ";
+      const centralTime = DateTime.now().setZone("America/Chicago");
+      const datePart = centralTime.toFormat("yyLLdd");
 
       const lastOrder = await ProductRequest.findOne()
         .sort({ createdAt: -1 })
+        .select("orderId")
         .lean();
 
       let orderNumber = 1;
-
-      const centralTime = DateTime.now().setZone("America/Chicago");
-      const datePart = centralTime.toFormat("yyLLdd"); // e.g., 240612
-
-      if (lastOrder && lastOrder.orderId) {
+      if (lastOrder?.orderId) {
         const match = lastOrder.orderId.match(/-(\d{2})$/);
-        if (match && match[1]) {
-          orderNumber = parseInt(match[1], 10) + 1;
-        }
+        if (match) orderNumber = Number(match[1]) + 1;
       }
 
-      const orderPart = String(orderNumber).padStart(2, "0");
-      const generatedOrderId = `${storePrefix}-${datePart}-${orderPart}`;
+      const generatedOrderId = `${storePrefix}-${datePart}-${String(
+        orderNumber,
+      ).padStart(2, "0")}`;
 
-      payload.orderId = generatedOrderId;
-      const newOrder = new ProductRequest(payload);
+      const shipmentRes = await axios.post(
+        `${EASYSHIP_API_URL}/shipments`,
+        {
+          origin_address: {
+            line_1: "Level 5, 123 George Street",
+            city: "Sydney",
+            state: "New South Wales",
+            postal_code: "2000",
+            country_alpha2: "AU",
+            contact_name: "Warehouse Manager",
+            contact_phone: "+61400000000",
+            company_name: "Jaszno & Co",
+            contact_email: "warehouse@example.com",
+          },
 
-      newOrder.orderId = generatedOrderId;
-      await newOrder.save();
+          destination_address,
+
+          incoterms: "DDU",
+
+          courier_settings: {
+            allow_fallback: false,
+            apply_shipping_rules: true,
+            courier_service_id: courier_service_id,
+            list_unavailable_services: true,
+          },
+
+          shipping_settings: {
+            units: {
+              weight: "kg",
+              dimensions: "cm",
+            },
+          },
+
+          parcels,
+        },
+        getHeaders(),
+      );
+
+      const easyshipShipmentId =
+        shipmentRes?.data?.shipment?.easyship_shipment_id;
+
+      if (!easyshipShipmentId) {
+        return res.status(500).json({ message: "Shipment creation failed" });
+      }
+ 
+      const result = await axios.post(
+        `${EASYSHIP_API_URL}/batches/labels`,
+        {
+          shipments: [{ easyship_shipment_id: easyshipShipmentId }],
+        },
+        getHeaders(),
+      );
+
+      const data = result.data || {};
+
+      const newOrder = await ProductRequest.create({
+        ...req.body,
+        orderId: generatedOrderId,
+        batchId: data?.batch?.id,
+        easyship_shipment_id: easyshipShipmentId,
+        status: "Processing",
+        shippingCost: shippingCost
+      });
 
       await Promise.all(
-        payload.productDetail.map(async (productItem) => {
-          const product = await Product.findById(productItem.product);
+        productDetail.map(async (item) => {
+          const product = await Product.findById(item.product);
           if (!product) return;
 
-          const colorToMatch = productItem.color;
-          const quantityToReduce = Number(productItem.qty || 0);
-
-          if (!colorToMatch || !quantityToReduce) return;
+          const qty = Number(item.qty || 0);
+          if (!qty) return;
 
           const updatedVariants = product.varients.map((variant) => {
-            if (variant.color !== colorToMatch) return variant;
+            if (variant.color !== item.color) return variant;
 
-            const updatedSelected = variant.selected.map((sel) => {
-              return {
-                ...sel,
-                qty: Math.max(Number(sel.qty) - quantityToReduce, 0).toString(),
-              };
-            });
-            console.log("updatedSelected", updatedSelected);
             return {
               ...variant,
-              selected: updatedSelected,
+              selected: variant.selected.map((sel) => ({
+                ...sel,
+                qty: Math.max(Number(sel.qty) - qty, 0).toString(),
+              })),
             };
           });
 
-          await Product.findByIdAndUpdate(
-            product._id,
-            {
-              variants: updatedVariants,
-              $inc: {
-                sold_pieces: quantityToReduce,
-                pieces: -quantityToReduce,
-              },
+          await Product.findByIdAndUpdate(product._id, {
+            variants: updatedVariants,
+            $inc: {
+              sold_pieces: qty,
+              pieces: -qty,
             },
-            { new: true }
-          );
-        })
+          });
+        }),
       );
 
-      await mailNotification.orderDelivered({
-        email: req?.body?.Email,
-        orderId: newOrder.orderId,
-      });
+      if (ShippingAddress) {
+        await User.findByIdAndUpdate(user, {
+          shippingAddress: ShippingAddress,
+        });
+      }
 
-      const user = await User.findById(payload.user); // user document milega
-      console.log("User shipping address before:", user.shippingAddress);
-      user.shippingAddress = payload.ShippingAddress; // update field
-      await user.save();
-      console.log("User shipping address updated:", user.shippingAddress);
+      // if (Email) {
+      //   await mailNotification.orderDelivered({
+      //     email: Email,
+      //     orderId: generatedOrderId,
+      //   });
+      // }
 
       return response.ok(res, {
-        message: "Product request added successfully",
-        orders: newOrder,
+        message: "Order placed successfully",
+        order: newOrder,
       });
     } catch (error) {
+      console.error("Order Error:", error.response?.data || error);
       return response.error(res, error);
     }
   },
@@ -565,8 +645,6 @@ module.exports = {
   getrequestProduct: async (req, res) => {
     try {
       const { page = 1, limit = 20 } = req.query;
-      console.log(req.user?.id);
-      console.log(req.user?._id);
       const product = await ProductRequest.find({ user: req.user?.id })
         .populate("productDetail.product user", "-password -varients")
         .limit(limit * 1)
@@ -602,7 +680,7 @@ module.exports = {
       const product = await ProductRequest.findByIdAndUpdate(
         req.params.id,
         req.body,
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
       return response.ok(res, product);
     } catch (error) {
@@ -827,7 +905,7 @@ module.exports = {
             categoryName: cat.name,
             products,
           };
-        })
+        }),
       );
 
       return res.status(200).json({
@@ -906,11 +984,11 @@ module.exports = {
       // Send file
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       res.setHeader(
         "Content-Disposition",
-        "attachment; filename=products.xlsx"
+        "attachment; filename=products.xlsx",
       );
 
       await workbook.xlsx.write(res);
@@ -996,11 +1074,11 @@ module.exports = {
       // Send file
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       res.setHeader(
         "Content-Disposition",
-        "attachment; filename=products.xlsx"
+        "attachment; filename=products.xlsx",
       );
 
       await workbook.xlsx.write(res);
@@ -1073,7 +1151,7 @@ module.exports = {
         };
 
         const unitPrice = Number(
-          product?.varients?.[0]?.selected?.[0]?.offerprice || 0
+          product?.varients?.[0]?.selected?.[0]?.offerprice || 0,
         );
 
         const stockPieces = Number(product.pieces || 0);
@@ -1117,11 +1195,11 @@ module.exports = {
       // 7️⃣ Send Excel
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       res.setHeader(
         "Content-Disposition",
-        "attachment; filename=sales-report.xlsx"
+        "attachment; filename=sales-report.xlsx",
       );
 
       await workbook.xlsx.write(res);
