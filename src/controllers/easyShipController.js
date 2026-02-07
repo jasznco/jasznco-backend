@@ -170,7 +170,7 @@ module.exports = {
 
       switch (event_type) {
         case "shipment.label.created":
-          await Shipping.updateOne(
+          await Order.updateOne(
             { easyship_shipment_id },
             {
               labelUrl: data.label_url,
@@ -182,7 +182,7 @@ module.exports = {
           break;
 
         case "shipment.label.failed":
-          await Shipping.updateOne(
+          await Order.updateOne(
             { easyship_shipment_id },
             {
               status: "LABEL_FAILED",
@@ -193,7 +193,7 @@ module.exports = {
           break;
 
         case "shipment.tracking.status.changed":
-          await Shipping.updateOne(
+          await Order.updateOne(
             { easyship_shipment_id },
             {
               status: data.status,
@@ -205,7 +205,7 @@ module.exports = {
           break;
 
         case "shipment.tracking.checkpoints.created":
-          await Shipping.updateOne(
+          await Order.updateOne(
             { easyship_shipment_id },
             {
               $push: {
@@ -227,7 +227,7 @@ module.exports = {
           break;
 
         case "shipment.cancelled":
-          await Shipping.updateOne(
+          await Order.updateOne(
             { easyship_shipment_id },
             { status: "CANCELLED" },
           );

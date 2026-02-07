@@ -64,14 +64,16 @@ const productrequestchema = new mongoose.Schema(
       enum: [
         "Pending",
         "Processing",
-        "Completed",
-        "Return",
-        "Cancel",
-        "Shipped",
-        "Return Requested",
+        "WAITING_FOR_PICKUP",
+        "IN_TRANSIT",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+        "LABEL_FAILED",
       ],
       default: "Pending",
     },
+
     orderId: {
       type: String,
       unique: true,
@@ -104,6 +106,19 @@ const productrequestchema = new mongoose.Schema(
       enum: ["Paid", "UnPaid", "Pending"],
       default: "Pending",
     },
+    trackingPageUrl: { type: String },
+    lastTrackingStatus: { type: String },
+    easyshipTrackingStatus: { type: String },
+    failureReason: { type: String },
+
+    checkpoints: [
+      {
+        location: String,
+        message: String,
+        status: String,
+        trackedAt: Date,
+      },
+    ],
   },
   {
     timestamps: true,

@@ -193,6 +193,7 @@ router.post("/downloadSalesReports", product.downloadSalesReports);
 
 router.post("/rates", shippingController.getShippingRates);
 router.get("/track/:shipmentId", shippingController.trackShipment);
+
 router.post(
   "/webhook/easyship",
   express.raw({ type: "application/json" }),
