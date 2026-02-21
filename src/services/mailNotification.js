@@ -1,9 +1,8 @@
 const nodemailer = require("nodemailer");
+const { sendMailWithSubjectViaSendgrid } = require("./sendgrid");
 
 const transporter = nodemailer.createTransport({
-  host: "smtpout.secureserver.net",
-  port: 465,
-  secure: true,
+  service: "gmail",
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
@@ -11,6 +10,8 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendMail = async (to, subject, html) => {
+  return await sendMailWithSubjectViaSendgrid([to], subject, html);
+
   return new Promise((resolve, reject) => {
     const mailConfigurations = {
       from: `Jasz & Co <${process.env.MAIL_USER}>`,
@@ -29,8 +30,7 @@ const sendMail = async (to, subject, html) => {
 module.exports = {
   welcomeMail: async (user) => {
     try {
-      console.log("Sending welcome email to:", user.email);
-
+     
       const html = `
       <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
         <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 30px; border: 1px solid #ddd;">
@@ -103,7 +103,7 @@ module.exports = {
       return await sendMail(
         email,
         "Password Change Notification - Jasz & Co",
-        html
+        html,
       );
     } catch (err) {
       throw new Error("Could not send password change mail");
@@ -139,6 +139,7 @@ module.exports = {
       throw new Error("Could not send delivery notification");
     }
   },
+
   wholesaleApplicationAdmin: async (WholesaleData) => {
     try {
       const wholesaleData = WholesaleData.WholesaleData;
@@ -218,15 +219,16 @@ module.exports = {
       return await sendMail(
         "customerservice@jasznco.com",
         `New Wholesale Application - ${wholesaleData?.companyName}`,
-        html
+        html,
       );
     } catch (err) {
       console.error("Error sending admin wholesale email:", err);
       throw new Error(
-        "Could not send wholesale application notification to admin"
+        "Could not send wholesale application notification to admin",
       );
     }
   },
+  
   wholesaleApplicationReceived: async (WholesaleData) => {
     try {
       const wholesaleData = WholesaleData.WholesaleData;
@@ -308,7 +310,7 @@ module.exports = {
       return await sendMail(
         wholesaleData?.email,
         `Wholesale Application Received - ${wholesaleData?.companyName}`,
-        html
+        html,
       );
     } catch (err) {
       console.error("Error sending wholesale email:", err);

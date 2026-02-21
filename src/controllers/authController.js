@@ -146,7 +146,7 @@ module.exports = {
       });
 
       await ver.save();
-      // await mailNotification.loginOTP({ email, otp });
+      await mailNotification.loginOTP({ email, otp });
 
       return res.status(200).json({ message: "OTP sent successfully" });
     } catch (error) {
