@@ -5,6 +5,8 @@ const response = require("../../responses");
 const axios = require("axios");
 const EASYSHIP_API_URL = process.env.EASYSHIP_API_URL;
 const EASYSHIP_TOKEN = process.env.EASYSHIP_TOKEN;
+const ProductRequest = require("@models/product-request");
+
 
 const getHeaders = () => ({
   headers: {
@@ -148,6 +150,106 @@ module.exports = {
       return response.error(res, error);
     }
   },
+
+  createShipmentManually: async (req, res) => {
+    try {
+      const { orderId } = req.body;
+
+      if (!orderId) {
+        return res.status(400).json({ message: "Order ID required" });
+      }
+
+      const order = await ProductRequest.findById(orderId);
+
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      if (order.easyship_shipment_id) {
+        return res.status(400).json({
+          message: "Shipment already created for this order",
+        });
+      }
+
+      console.log(order.parcels.items);
+      
+      const shipmentRes = await axios.post(
+        `${EASYSHIP_API_URL}/shipments`,
+        {
+          origin_address: {
+            line_1: "Level 5, 123 George Street",
+            city: "Sydney",
+            state: "New South Wales",
+            postal_code: "2000",
+            country_alpha2: "AU",
+            contact_name: "Warehouse Manager",
+            contact_phone: "+61400000000",
+            company_name: "Jaszno & Co",
+            contact_email: "warehouse@example.com",
+          },
+
+          destination_address: order.destination_address,
+
+          incoterms: "DDU",
+
+          courier_settings: {
+            allow_fallback: false,
+            apply_shipping_rules: true,
+            courier_service_id: order.courier_service_id,
+            list_unavailable_services: true,
+          },
+
+          shipping_settings: {
+            units: {
+              weight: "kg",
+              dimensions: "cm",
+            },
+          },
+
+          parcels: order?.parcels,
+        },
+        getHeaders(),
+      );
+
+      const easyshipShipmentId =
+        shipmentRes?.data?.shipment?.easyship_shipment_id;
+
+      if (!easyshipShipmentId) {
+        return res.status(500).json({
+          message: "Shipment creation failed",
+        });
+      }
+
+      const labelRes = await axios.post(
+        `${EASYSHIP_API_URL}/batches/labels`,
+        {
+          shipments: [{ easyship_shipment_id: easyshipShipmentId }],
+        },
+        getHeaders(),
+      );
+
+      const batchId = labelRes?.data?.batch?.id;
+
+      order.easyship_shipment_id = easyshipShipmentId;
+      order.batchId = batchId;
+      order.status = "Shipped";
+
+      await order.save();
+
+      return res.status(200).json({
+        message: "Shipment & Label created successfully",
+        shipmentId: easyshipShipmentId,
+        batchId,
+      });
+    } catch (error) {
+      console.error("Manual Shipment Error:", error.response?.data || error);
+      return res.status(500).json({
+        message: "Shipment creation failed",
+        error: error.response?.data || error.message,
+      });
+    }
+  },
+
   webhookShippingUpdate: async (req, res) => {
     try {
       const signature = req.headers["x-easyship-signature"];

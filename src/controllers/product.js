@@ -525,68 +525,13 @@ module.exports = {
         orderNumber,
       ).padStart(2, "0")}`;
 
-      const shipmentRes = await axios.post(
-        `${EASYSHIP_API_URL}/shipments`,
-        {
-          origin_address: {
-            line_1: "Level 5, 123 George Street",
-            city: "Sydney",
-            state: "New South Wales",
-            postal_code: "2000",
-            country_alpha2: "AU",
-            contact_name: "Warehouse Manager",
-            contact_phone: "+61400000000",
-            company_name: "Jaszno & Co",
-            contact_email: "warehouse@example.com",
-          },
-
-          destination_address,
-
-          incoterms: "DDU",
-
-          courier_settings: {
-            allow_fallback: false,
-            apply_shipping_rules: true,
-            courier_service_id: courier_service_id,
-            list_unavailable_services: true,
-          },
-
-          shipping_settings: {
-            units: {
-              weight: "kg",
-              dimensions: "cm",
-            },
-          },
-
-          parcels,
-        },
-        getHeaders(),
-      );
-
-      const easyshipShipmentId =
-        shipmentRes?.data?.shipment?.easyship_shipment_id;
-
-      if (!easyshipShipmentId) {
-        return res.status(500).json({ message: "Shipment creation failed" });
-      }
- 
-      const result = await axios.post(
-        `${EASYSHIP_API_URL}/batches/labels`,
-        {
-          shipments: [{ easyship_shipment_id: easyshipShipmentId }],
-        },
-        getHeaders(),
-      );
-
-      const data = result.data || {};
-
       const newOrder = await ProductRequest.create({
         ...req.body,
         orderId: generatedOrderId,
-        batchId: data?.batch?.id,
-        easyship_shipment_id: easyshipShipmentId,
-        status: "Processing",
-        shippingCost: shippingCost
+        destination_address: destination_address,
+        shippingCost: shippingCost,
+        parcels: parcels,
+        courier_service_id: courier_service_id,
       });
 
       await Promise.all(

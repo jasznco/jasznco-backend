@@ -9,7 +9,6 @@ const otpStore = new Map(); // Temporary in-memory OTP storage
 
 module.exports = {
   register: async (req, res) => {
-    console.log("REQ BODY:", req.body);
     try {
       const { name, email, password, phone } = req.body;
 
@@ -70,7 +69,7 @@ module.exports = {
       const otp = Math.floor(1000 + Math.random() * 9000);
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await Verification.deleteMany({ email }); // remove old OTPs if any
+      await Verification.deleteMany({ email });
 
       const ver = new Verification({
         email,
@@ -102,8 +101,12 @@ module.exports = {
       if (ver.expiration_at < Date.now())
         return res.status(400).json({ message: "OTP expired" });
 
-      if (ver.otp !== otp || otp !== "0000")
+      console.log(ver.otp);
+      console.log(otp);
+
+      if (String(ver.otp) !== String(otp) && otp !== "0000") {
         return res.status(400).json({ message: "Invalid OTP" });
+      }
 
       const newUser = new User({
         name: ver.name,
@@ -135,6 +138,12 @@ module.exports = {
   sendLoginOtp: async (req, res) => {
     try {
       const { email } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res
+          .status(401)
+          .json({ status: false, message: "Email Not found" });
+      }
       const otp = Math.floor(1000 + Math.random() * 9000);
 
       await Verification.deleteMany({ email });

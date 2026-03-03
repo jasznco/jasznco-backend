@@ -57,13 +57,14 @@ const productrequestchema = new mongoose.Schema(
     courier_id: {
       type: String,
     },
+    parcels: { type: Array },
     tracking_number: { type: String },
     label_url: { type: String },
     status: {
       type: String,
       enum: [
         "Pending",
-        "Processing",
+        "Shipped",
         "WAITING_FOR_PICKUP",
         "IN_TRANSIT",
         "OUT_FOR_DELIVERY",
@@ -106,11 +107,27 @@ const productrequestchema = new mongoose.Schema(
       enum: ["Paid", "UnPaid", "Pending"],
       default: "Pending",
     },
+    courier_service_id: {
+      type: String,
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["COD", "RAZORPAY", "STRIPE", "PAYPAL"],
+    },
+    courier_name: { type: String }, // DHL / FedEx / Aramex
+    courier_logo: { type: String },
     trackingPageUrl: { type: String },
+
     lastTrackingStatus: { type: String },
+
     easyshipTrackingStatus: { type: String },
+
     failureReason: { type: String },
 
+    destination_address: {
+      type: object,
+    },
     checkpoints: [
       {
         location: String,

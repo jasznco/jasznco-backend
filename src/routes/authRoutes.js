@@ -33,6 +33,7 @@ const setting = require("@controllers/setting");
 const flashSaleController = require("@controllers/sale");
 const instaImage = require("@controllers/instaImage");
 const shippingController = require("@controllers/easyShipController");
+const easyShipController = require("../controllers/easyShipController");
 const router = express.Router();
 
 router.post("/auth/login", login);
@@ -199,5 +200,7 @@ router.post(
   express.raw({ type: "application/json" }),
   shippingController.webhookShippingUpdate,
 );
+
+router.post("/create-Shipment", easyShipController.createShipmentManually);
 
 module.exports = router;
