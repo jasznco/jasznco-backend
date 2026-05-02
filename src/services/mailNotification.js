@@ -368,4 +368,30 @@ module.exports = {
       throw new Error("Could not send login OTP email");
     }
   },
+
+  newsletterConfirmation: async ({ email, confirmUrl }) => {
+    try {
+      const html = `
+      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 30px; border: 1px solid #ddd;">
+          <h2 style="color: #127300; text-align: center;">Confirm Your Newsletter Subscription</h2>
+          <p>Hello,</p>
+          <p>Thank you for subscribing to the <strong>Jasz & Co</strong> newsletter!</p>
+          <p>Please click the button below to confirm your subscription:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${confirmUrl}" style="background-color: #127300; color: #fff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: bold;">
+              Confirm Subscription
+            </a>
+          </div>
+          <p style="color: #888; font-size: 13px;">If you did not request this, you can safely ignore this email.</p>
+          <p style="margin-top: 25px;">Warm regards,<br/><strong style="color: #127300;">The Jasz & Co Team</strong></p>
+        </div>
+      </div>`;
+
+      return await sendMail(email, "Confirm Your Newsletter Subscription - Jasz & Co", html);
+    } catch (err) {
+      console.error("Error sending newsletter confirmation email:", err);
+      throw new Error("Could not send newsletter confirmation email");
+    }
+  }
 };

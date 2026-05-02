@@ -65,6 +65,7 @@ router.post("/updateStatusForWholesale", wholesale.updateStatusForWholesale);
 router.post("/add-subscriber", user.addNewsLetter);
 router.get("/get-subscriber", user.getNewsLetter);
 router.post("/del-subscriber", user.DeleteNewsLetter);
+router.get("/verify-newsletter", user.verifyNewsLetter);
 
 router.post("/createProduct", product.createProduct);
 router.get("/getProduct", product.getProduct);

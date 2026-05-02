@@ -211,16 +211,48 @@ module.exports = {
     try {
       let cond = {};
 
-      if (req.query.Category && req.query.Category !== "All Category") {
-        cond.categoryName = { $in: [req.query.Category] };
-      }
+      const rawCategory = req.query["Category[]"] || req.query.Category;
+      const rawSubcategory = req.query["Subcategory[]"] || req.query.Subcategory;
 
-      if (req.query["Subcategory[]"]) {
-        const subcategories = Array.isArray(req.query["Subcategory[]"])
-          ? req.query["Subcategory[]"]
-          : [req.query["Subcategory[]"]];
+      if (rawCategory) {
+        const cats = Array.isArray(rawCategory) ? rawCategory : [rawCategory];
+        const filtered = cats.filter((c) => c !== "All Category");
 
-        cond.subCategoryName = { $in: subcategories };
+        if (filtered.length > 0) {
+          const subcategories = rawSubcategory
+            ? Array.isArray(rawSubcategory)
+              ? rawSubcategory
+              : [rawSubcategory]
+            : [];
+
+          if (subcategories.length > 0) {
+            const rawCatsWithSubs = req.query["CatsWithSubs[]"] || req.query.CatsWithSubs;
+            const catsWithSubs = rawCatsWithSubs
+              ? Array.isArray(rawCatsWithSubs) ? rawCatsWithSubs : [rawCatsWithSubs]
+              : [];
+
+            const catsWithoutSubs = filtered.filter((c) => !catsWithSubs.includes(c));
+
+            const orConditions = [];
+
+            if (catsWithSubs.length > 0) {
+              orConditions.push({
+                categoryName: { $in: catsWithSubs },
+                subCategoryName: { $in: subcategories },
+              });
+            }
+
+            if (catsWithoutSubs.length > 0) {
+              orConditions.push({ categoryName: { $in: catsWithoutSubs } });
+            }
+
+            if (orConditions.length > 0) {
+              cond.$or = orConditions;
+            }
+          } else {
+            cond.categoryName = { $in: filtered };
+          }
+        }
       }
 
       console.log(cond);

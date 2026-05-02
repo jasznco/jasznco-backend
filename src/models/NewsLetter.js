@@ -4,7 +4,16 @@ const newsletter = new mongoose.Schema(
   {
     email: {
       type: String,
-      trim: true
+      trim: true,
+      lowercase: true
+    },
+    verified: {
+      type: Boolean,
+      default: false
+    },
+    token: {
+      type: String,
+      default: null
     },
     read: {
       type: Boolean,

@@ -2,21 +2,61 @@ const User = require('@models/User');
 const response = require('../../responses');
 const Newsletter = require('@models/NewsLetter');
 const Review = require('@models/Review');
+const crypto = require('crypto');
+const mailNotification = require('../services/mailNotification');
 
 module.exports = {
   addNewsLetter: async (req, res) => {
     try {
-      const payload = req?.body || {};
-      const u = await Newsletter.find(payload);
-      if (u.length > 0) {
-        return response.conflict(res, {
-          message: 'Email already exists.'
-        });
-      } else {
-        let news = new Newsletter(payload);
-        const newsl = await news.save();
-        return response.ok(res, { message: 'Subscribed successfully' });
+      const email = req?.body?.email?.toLowerCase()?.trim();
+      if (!email) return response.badRequest(res, { message: 'Email is required.' });
+
+      const existing = await Newsletter.findOne({ email });
+
+      if (existing) {
+        if (existing.verified) {
+          return response.conflict(res, { message: 'This email is already subscribed.' });
+        } else {
+          // Already sent but not verified — don't send again
+          return response.conflict(res, { message: 'A confirmation link has already been sent to this email. Please check your inbox.' });
+        }
       }
+
+      // Generate a secure token
+      const token = crypto.randomBytes(32).toString('hex');
+
+      const news = new Newsletter({ email, token, verified: false });
+      await news.save();
+
+      const confirmUrl = `${process.env.FRONTEND_URL}/confirm-newsletter?token=${token}`;
+      await mailNotification.newsletterConfirmation({ email, confirmUrl });
+
+      return response.ok(res, { message: 'A confirmation link has been sent to your email. Please click it to complete your subscription.' });
+    } catch (error) {
+      return response.error(res, error);
+    }
+  },
+
+  verifyNewsLetter: async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token) return response.badRequest(res, { message: 'Invalid or missing token.' });
+
+      const subscriber = await Newsletter.findOne({ token });
+
+      if (!subscriber) {
+        return response.notFound(res, { message: 'Invalid or expired confirmation link.' });
+      }
+
+      if (subscriber.verified) {
+        return response.ok(res, { message: 'You are already subscribed!' });
+      }
+
+      subscriber.verified = true;
+      subscriber.token = null;
+      await subscriber.save();
+
+      return response.ok(res, { message: 'You have successfully subscribed to our newsletter!' });
     } catch (error) {
       return response.error(res, error);
     }
